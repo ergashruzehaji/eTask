@@ -235,15 +235,6 @@
               <button type="button" id="close-sidebar" class="close-btn" title="Close">✕</button>
             </div>
             
-            <!-- Search Section -->
-            <div class="sidebar-section">
-              <h4 class="section-title" data-translate="search_tasks">🔍 Search Tasks</h4>
-              <div class="search-wrapper">
-                <input type="text" id="search-input" class="search-input" placeholder="Search tasks..." data-translate-placeholder="search_placeholder"/>
-                <button id="clear-search" class="clear-search-btn" style="display: none;">✕</button>
-              </div>
-            </div>
-            
             <!-- Quick Actions Section -->
             <div class="sidebar-section">
               <h4 class="section-title" data-translate="quick_actions">⚡ Quick Actions</h4>
@@ -270,6 +261,15 @@
                   <button id="delete-selected-btn" class="bulk-btn delete-btn" data-translate="delete_selected">Delete Selected</button>
                   <button id="complete-selected-btn" class="bulk-btn complete-btn" data-translate="complete_selected">Complete Selected</button>
                 </div>
+              </div>
+            </div>
+            
+            <!-- Search Section -->
+            <div class="sidebar-section">
+              <h4 class="section-title" data-translate="search_tasks">🔍 Search Tasks</h4>
+              <div class="search-wrapper">
+                <input type="text" id="search-input" class="search-input" placeholder="Search tasks..." data-translate-placeholder="search_placeholder"/>
+                <button id="clear-search" class="clear-search-btn" style="display: none;">✕</button>
               </div>
             </div>
             
@@ -323,23 +323,42 @@
               <div class="recurring-section">
                 <div class="recurring-header">
                   <button type="button" id="sidebar-toggle-recurring" class="recurring-toggle-btn">
-                    🔄 <span class="toggle-text" data-translate="recurring">Add Recurring</span> <span class="toggle-icon">▼</span>
+                    🔄 <span class="toggle-text" data-translate="recurring">Add Recurring</span> <span class="toggle-icon">▶</span>
                   </button>
                 </div>
                 <div id="sidebar-recurring-options" class="recurring-options" style="display: none;">
-                  <div class="form-row">
-                    <div class="form-group half">
-                      <label class="form-label">📅 Repeat</label>
-                      <select id="sidebar-recurring-type" class="form-select">
-                        <option value="none">No Repeat</option>
-                        <option value="daily" data-translate="daily">Daily</option>
-                        <option value="weekly" data-translate="weekly">Weekly</option>
-                        <option value="monthly" data-translate="monthly">Monthly</option>
-                      </select>
+                  <div class="recurring-type-selector">
+                    <label class="form-label">📅 Repeat Pattern</label>
+                    <select id="sidebar-recurring-type" class="form-select">
+                      <option value="none">🚫 No Repeat</option>
+                      <option value="daily">📅 Daily</option>
+                      <option value="weekly">📆 Weekly</option>
+                      <option value="monthly">🗓️ Monthly</option>
+                      <option value="custom">🎛️ Custom Schedule</option>
+                    </select>
+                  </div>
+                  
+                  <!-- Duration Options -->
+                  <div class="recurring-duration" id="recurring-duration" style="display: none;">
+                    <div class="form-row">
+                      <div class="form-group half">
+                        <label class="form-label">🔢 How many times?</label>
+                        <input type="number" id="sidebar-recurring-count" class="form-input" min="1" max="365" value="3" placeholder="Number of repetitions">
+                      </div>
+                      <div class="form-group half">
+                        <label class="form-label">📊 Duration</label>
+                        <select id="sidebar-duration-type" class="form-select">
+                          <option value="count">Specific number</option>
+                          <option value="until">Until date</option>
+                          <option value="forever">Forever</option>
+                        </select>
+                      </div>
                     </div>
-                    <div class="form-group half">
-                      <label class="form-label">🔢 Times</label>
-                      <input type="number" id="sidebar-recurring-count" class="form-input" min="1" max="365" value="3" placeholder="Count">
+                    
+                    <!-- Until Date Picker -->
+                    <div class="form-group" id="until-date-group" style="display: none;">
+                      <label class="form-label">📅 Repeat until</label>
+                      <input type="date" id="sidebar-until-date" class="form-input">
                     </div>
                   </div>
                   
@@ -398,15 +417,79 @@
                       </label>
                     </div>
                   </div>
+                  
+                  <!-- Daily Options -->
+                  <div id="sidebar-daily-options" class="daily-options" style="display: none;">
+                    <div class="form-row">
+                      <div class="form-group half">
+                        <label class="form-label">🔄 Every</label>
+                        <input type="number" id="sidebar-daily-interval" class="form-input" min="1" max="30" value="1" placeholder="1">
+                      </div>
+                      <div class="form-group half">
+                        <label class="form-label">📅 Day(s)</label>
+                        <select id="sidebar-daily-type" class="form-select">
+                          <option value="day">Day</option>
+                          <option value="weekday">Weekday (Mon-Fri)</option>
+                          <option value="weekend">Weekend (Sat-Sun)</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Monthly Options -->
+                  <div id="sidebar-monthly-options" class="monthly-options" style="display: none;">
+                    <div class="form-group">
+                      <label class="form-label">📅 Monthly Pattern</label>
+                      <div class="monthly-pattern-selector">
+                        <label class="radio-option">
+                          <input type="radio" name="monthly-pattern" value="date" checked>
+                          <span class="radio-label">Same date each month (e.g., 15th of every month)</span>
+                        </label>
+                        <label class="radio-option">
+                          <input type="radio" name="monthly-pattern" value="weekday">
+                          <span class="radio-label">Same weekday (e.g., 2nd Friday of every month)</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Custom Schedule Options -->
+                  <div id="sidebar-custom-options" class="custom-options" style="display: none;">
+                    <div class="form-group">
+                      <label class="form-label">🎛️ Custom Schedule</label>
+                      <textarea id="sidebar-custom-schedule" class="form-textarea" rows="3" placeholder="Enter custom schedule (e.g., 'Every 2 weeks on Monday and Wednesday', 'First Monday of each month', etc.)"></textarea>
+                      <div class="custom-examples">
+                        <p><strong>Examples:</strong></p>
+                        <ul>
+                          <li>Every 2 weeks</li>
+                          <li>Every 3 days</li>
+                          <li>First Monday of each month</li>
+                          <li>Last Friday of each month</li>
+                          <li>Every 6 months</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
 
                   <!-- Quick Presets -->
                   <div class="recurring-presets">
-                    <label class="form-label" data-translate="quick_presets">Quick Presets</label>
+                    <label class="form-label" data-translate="quick_presets">⚡ Quick Presets</label>
                     <div class="preset-buttons">
-                      <button type="button" class="preset-btn" data-preset="work-week" data-translate="weekdays_only">Work Week (Mon-Fri)</button>
-                      <button type="button" class="preset-btn" data-preset="weekends" data-translate="weekends_only">Weekends</button>
-                      <button type="button" class="preset-btn" data-preset="daily-month" data-translate="daily_month">Daily for Month</button>
-                      <button type="button" class="preset-btn" data-preset="weekly-year" data-translate="weekly_year">Weekly for Year</button>
+                      <button type="button" class="preset-btn" data-preset="work-week">
+                        💼 Work Week (Mon-Fri)
+                      </button>
+                      <button type="button" class="preset-btn" data-preset="weekends">
+                        🏖️ Weekends Only
+                      </button>
+                      <button type="button" class="preset-btn" data-preset="daily-month">
+                        📅 Daily for 30 days
+                      </button>
+                      <button type="button" class="preset-btn" data-preset="weekly-year">
+                        📆 Weekly for 1 year
+                      </button>
+                      <button type="button" class="preset-btn" data-preset="bi-weekly">
+                        🔄 Every 2 weeks
+                      </button>
                     </div>
                   </div>
                 </div>

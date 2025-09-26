@@ -997,8 +997,17 @@ function initializeTaskSidebar() {
             const isExpanded = sidebarRecurringOptions.style.display === 'block';
             sidebarRecurringOptions.style.display = isExpanded ? 'none' : 'block';
             sidebarToggleRecurring.classList.toggle('expanded', !isExpanded);
+            
+            // Update arrow icon
+            const toggleIcon = sidebarToggleRecurring.querySelector('.toggle-icon');
+            if (toggleIcon) {
+                toggleIcon.textContent = isExpanded ? '▶' : '▼';
+            }
         });
     }
+    
+    // Initialize enhanced recurring system
+    initializeEnhancedRecurring();
     
     // Handle recurring type change
     if (sidebarRecurringType && sidebarWeeklyOptions) {
@@ -1247,26 +1256,69 @@ function handleSidebarFormSubmit(e) {
 
 function generateSidebarRecurringTasks(baseTask) {
     const recurringType = document.getElementById('sidebar-recurring-type')?.value;
-    const recurringCount = parseInt(document.getElementById('sidebar-recurring-count')?.value) || 1;
     const recurringOptions = document.getElementById('sidebar-recurring-options');
     
-    if (!recurringOptions || recurringOptions.style.display === 'none' || recurringType === 'none' || recurringCount <= 1) {
+    if (!recurringOptions || recurringOptions.style.display === 'none' || recurringType === 'none') {
         return [{ ...baseTask, id: Date.now() }];
     }
     
+    // Get duration settings
+    const durationType = document.getElementById('sidebar-duration-type')?.value || 'count';
+    const recurringCount = parseInt(document.getElementById('sidebar-recurring-count')?.value) || 3;
+    const untilDate = document.getElementById('sidebar-until-date')?.value;
+    
     const tasks = [];
     const baseDate = new Date(baseTask.date);
+    const endDate = untilDate ? new Date(untilDate) : null;
+    
+    // Determine max iterations based on duration type
+    let maxIterations = recurringCount;
+    if (durationType === 'until' && endDate) {
+        maxIterations = Math.min(365, recurringCount); // Safety limit
+    } else if (durationType === 'forever') {
+        maxIterations = 365; // Limit to 1 year for forever option
+    }
     
     switch (recurringType) {
         case 'daily':
-            for (let i = 0; i < recurringCount; i++) {
+            const dailyInterval = parseInt(document.getElementById('sidebar-daily-interval')?.value) || 1;
+            const dailyType = document.getElementById('sidebar-daily-type')?.value || 'day';
+            
+            let dayCount = 0;
+            for (let i = 0; i < maxIterations && dayCount < maxIterations; i++) {
                 const taskDate = new Date(baseDate);
-                taskDate.setDate(baseDate.getDate() + i);
+                
+                if (dailyType === 'weekday') {
+                    // Skip weekends
+                    taskDate.setDate(baseDate.getDate() + dayCount);
+                    while (taskDate.getDay() === 0 || taskDate.getDay() === 6) {
+                        dayCount++;
+                        taskDate.setDate(baseDate.getDate() + dayCount);
+                    }
+                } else if (dailyType === 'weekend') {
+                    // Only weekends
+                    taskDate.setDate(baseDate.getDate() + dayCount);
+                    while (taskDate.getDay() !== 0 && taskDate.getDay() !== 6) {
+                        dayCount++;
+                        taskDate.setDate(baseDate.getDate() + dayCount);
+                    }
+                } else {
+                    // Every day
+                    taskDate.setDate(baseDate.getDate() + (dayCount * dailyInterval));
+                }
+                
+                // Check if we've reached the end date
+                if (endDate && taskDate > endDate) break;
+                
                 tasks.push({
                     ...baseTask,
                     id: Date.now() + i,
-                    date: taskDate.toISOString().split('T')[0]
+                    date: taskDate.toISOString().split('T')[0],
+                    recurring: true,
+                    recurringInfo: `Daily (every ${dailyInterval} ${dailyType})`
                 });
+                
+                dayCount += dailyInterval;
             }
             break;
             
@@ -1279,38 +1331,92 @@ function generateSidebarRecurringTasks(baseTask) {
             let weekCount = 0;
             let taskId = 0;
             
-            while (tasks.length < recurringCount) {
+            while (tasks.length < maxIterations) {
+                let addedThisWeek = false;
+                
                 selectedDays.forEach(dayOfWeek => {
-                    if (tasks.length >= recurringCount) return;
+                    if (tasks.length >= maxIterations) return;
                     
                     const taskDate = new Date(baseDate);
                     const dayDiff = (dayOfWeek - baseDate.getDay() + 7) % 7;
                     taskDate.setDate(baseDate.getDate() + dayDiff + (weekCount * 7));
                     
+                    // Check if we've reached the end date
+                    if (endDate && taskDate > endDate) return;
+                    
                     tasks.push({
                         ...baseTask,
                         id: Date.now() + taskId++,
-                        date: taskDate.toISOString().split('T')[0]
+                        date: taskDate.toISOString().split('T')[0],
+                        recurring: true,
+                        recurringInfo: `Weekly on ${getTranslatedDayName(dayOfWeek)}`
                     });
+                    
+                    addedThisWeek = true;
                 });
+                
+                if (!addedThisWeek) break;
                 weekCount++;
             }
             break;
             
         case 'monthly':
-            for (let i = 0; i < recurringCount; i++) {
+            const monthlyPattern = document.querySelector('input[name="monthly-pattern"]:checked')?.value || 'date';
+            
+            for (let i = 0; i < maxIterations; i++) {
                 const taskDate = new Date(baseDate);
-                taskDate.setMonth(baseDate.getMonth() + i);
+                
+                if (monthlyPattern === 'date') {
+                    // Same date each month
+                    taskDate.setMonth(baseDate.getMonth() + i);
+                } else {
+                    // Same weekday pattern (e.g., 2nd Friday)
+                    const weekOfMonth = Math.ceil(baseDate.getDate() / 7);
+                    const dayOfWeek = baseDate.getDay();
+                    
+                    taskDate.setMonth(baseDate.getMonth() + i, 1);
+                    const firstDayOfMonth = taskDate.getDay();
+                    const targetDate = 1 + (dayOfWeek - firstDayOfMonth + 7) % 7 + (weekOfMonth - 1) * 7;
+                    taskDate.setDate(targetDate);
+                    
+                    // If target date doesn't exist in month, skip
+                    if (taskDate.getMonth() !== (baseDate.getMonth() + i) % 12) {
+                        continue;
+                    }
+                }
+                
+                // Check if we've reached the end date
+                if (endDate && taskDate > endDate) break;
+                
                 tasks.push({
                     ...baseTask,
                     id: Date.now() + i,
-                    date: taskDate.toISOString().split('T')[0]
+                    date: taskDate.toISOString().split('T')[0],
+                    recurring: true,
+                    recurringInfo: `Monthly (${monthlyPattern === 'date' ? 'same date' : 'same weekday'})`
                 });
+            }
+            break;
+            
+        case 'custom':
+            const customSchedule = document.getElementById('sidebar-custom-schedule')?.value;
+            if (customSchedule) {
+                // For now, create a single task with custom note
+                tasks.push({
+                    ...baseTask,
+                    id: Date.now(),
+                    recurring: true,
+                    recurringInfo: `Custom: ${customSchedule}`,
+                    text: `${baseTask.text} (Custom: ${customSchedule})`
+                });
+            } else {
+                return [{ ...baseTask, id: Date.now() }];
             }
             break;
     }
     
-    return tasks.slice(0, recurringCount);
+    console.log(`📅 Generated ${tasks.length} recurring tasks (${recurringType})`);
+    return tasks;
 }
 
 function getSidebarSelectedWeekdays() {
@@ -3415,6 +3521,160 @@ function debugAlarmSystem() {
 
 // Make debug function available globally
 window.debugAlarmSystem = debugAlarmSystem;
+
+// Enhanced Recurring Task System
+function initializeEnhancedRecurring() {
+    const recurringType = document.getElementById('sidebar-recurring-type');
+    const recurringDuration = document.getElementById('recurring-duration');
+    const durationType = document.getElementById('sidebar-duration-type');
+    const untilDateGroup = document.getElementById('until-date-group');
+    const weeklyOptions = document.getElementById('sidebar-weekly-options');
+    const dailyOptions = document.getElementById('sidebar-daily-options');
+    const monthlyOptions = document.getElementById('sidebar-monthly-options');
+    const customOptions = document.getElementById('sidebar-custom-options');
+    
+    if (!recurringType) return;
+    
+    // Handle recurring type changes
+    recurringType.addEventListener('change', (e) => {
+        const selectedType = e.target.value;
+        
+        // Show/hide duration options
+        if (selectedType !== 'none') {
+            recurringDuration.style.display = 'block';
+        } else {
+            recurringDuration.style.display = 'none';
+        }
+        
+        // Hide all specific options first
+        if (weeklyOptions) weeklyOptions.style.display = 'none';
+        if (dailyOptions) dailyOptions.style.display = 'none';
+        if (monthlyOptions) monthlyOptions.style.display = 'none';
+        if (customOptions) customOptions.style.display = 'none';
+        
+        // Show relevant options based on type
+        switch (selectedType) {
+            case 'daily':
+                if (dailyOptions) dailyOptions.style.display = 'block';
+                break;
+            case 'weekly':
+                if (weeklyOptions) weeklyOptions.style.display = 'block';
+                break;
+            case 'monthly':
+                if (monthlyOptions) monthlyOptions.style.display = 'block';
+                break;
+            case 'custom':
+                if (customOptions) customOptions.style.display = 'block';
+                break;
+        }
+    });
+    
+    // Handle duration type changes
+    if (durationType && untilDateGroup) {
+        durationType.addEventListener('change', (e) => {
+            const showDatePicker = e.target.value === 'until';
+            untilDateGroup.style.display = showDatePicker ? 'block' : 'none';
+            
+            if (showDatePicker) {
+                // Set default date to 1 month from now
+                const defaultDate = new Date();
+                defaultDate.setMonth(defaultDate.getMonth() + 1);
+                const untilDateInput = document.getElementById('sidebar-until-date');
+                if (untilDateInput && !untilDateInput.value) {
+                    untilDateInput.value = defaultDate.toISOString().split('T')[0];
+                }
+            }
+        });
+    }
+    
+    // Handle preset buttons
+    const presetButtons = document.querySelectorAll('.preset-btn');
+    presetButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const preset = e.target.dataset.preset;
+            applySidebarRecurringPreset(preset);
+        });
+    });
+    
+    console.log('✅ Enhanced recurring system initialized');
+}
+
+// Apply recurring presets with enhanced options
+function applySidebarRecurringPreset(preset) {
+    const recurringType = document.getElementById('sidebar-recurring-type');
+    const recurringCount = document.getElementById('sidebar-recurring-count');
+    const durationType = document.getElementById('sidebar-duration-type');
+    const weeklyOptions = document.getElementById('sidebar-weekly-options');
+    const dailyInterval = document.getElementById('sidebar-daily-interval');
+    const dailyType = document.getElementById('sidebar-daily-type');
+    
+    if (!recurringType) return;
+    
+    // Clear all weekday selections first
+    const weekdayCheckboxes = weeklyOptions?.querySelectorAll('input[type="checkbox"]');
+    if (weekdayCheckboxes) {
+        weekdayCheckboxes.forEach(cb => cb.checked = false);
+    }
+    
+    switch (preset) {
+        case 'work-week':
+            recurringType.value = 'weekly';
+            recurringCount.value = '52';
+            durationType.value = 'count';
+            // Select Monday through Friday (1-5)
+            [1, 2, 3, 4, 5].forEach(day => {
+                const checkbox = weeklyOptions?.querySelector(`input[value="${day}"]`);
+                if (checkbox) checkbox.checked = true;
+            });
+            break;
+            
+        case 'weekends':
+            recurringType.value = 'weekly';
+            recurringCount.value = '26';
+            durationType.value = 'count';
+            // Select Saturday and Sunday (6, 0)
+            [0, 6].forEach(day => {
+                const checkbox = weeklyOptions?.querySelector(`input[value="${day}"]`);
+                if (checkbox) checkbox.checked = true;
+            });
+            break;
+            
+        case 'daily-month':
+            recurringType.value = 'daily';
+            recurringCount.value = '30';
+            durationType.value = 'count';
+            if (dailyInterval) dailyInterval.value = '1';
+            if (dailyType) dailyType.value = 'day';
+            break;
+            
+        case 'weekly-year':
+            recurringType.value = 'weekly';
+            recurringCount.value = '52';
+            durationType.value = 'count';
+            // Select current day of week
+            const today = new Date().getDay();
+            const todayCheckbox = weeklyOptions?.querySelector(`input[value="${today}"]`);
+            if (todayCheckbox) todayCheckbox.checked = true;
+            break;
+            
+        case 'bi-weekly':
+            recurringType.value = 'weekly';
+            recurringCount.value = '26';
+            durationType.value = 'count';
+            // Select current day of week for bi-weekly
+            const currentDay = new Date().getDay();
+            const currentDayCheckbox = weeklyOptions?.querySelector(`input[value="${currentDay}"]`);
+            if (currentDayCheckbox) currentDayCheckbox.checked = true;
+            break;
+    }
+    
+    // Trigger the change event to update the UI
+    recurringType.dispatchEvent(new Event('change'));
+    durationType.dispatchEvent(new Event('change'));
+    
+    console.log(`📅 Applied preset: ${preset}`);
+}
 
 // Show alarm notification
 function showAlarmNotification(task) {

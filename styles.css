@@ -1,0 +1,257 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    color: white;
+    margin-bottom: 40px;
+}
+
+header h1 {
+    font-size: 3rem;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+header p {
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+main {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 30px;
+    align-items: start;
+}
+
+.add-task-section,
+.tasks-section {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.add-task-section h2,
+.tasks-section h2 {
+    margin-bottom: 20px;
+    color: #4a5568;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 10px;
+}
+
+#taskForm {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+#taskForm input,
+#taskForm select,
+#taskForm textarea {
+    padding: 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s ease;
+}
+
+#taskForm input:focus,
+#taskForm select:focus,
+#taskForm textarea:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+#taskForm textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+#taskForm button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+#taskForm button:hover {
+    transform: translateY(-2px);
+}
+
+.filter-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.filter-controls button {
+    padding: 8px 16px;
+    border: 2px solid #e2e8f0;
+    background: white;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.filter-controls button:hover,
+.filter-controls button.active {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.tasks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.task-item {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 20px;
+    transition: all 0.3s ease;
+}
+
+.task-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.task-item.completed {
+    opacity: 0.7;
+    text-decoration: line-through;
+}
+
+.task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.task-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #2d3748;
+}
+
+.task-type {
+    background: #667eea;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}
+
+.task-type.appointment {
+    background: #764ba2;
+}
+
+.task-datetime {
+    color: #718096;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+
+.task-description {
+    color: #4a5568;
+    margin-bottom: 15px;
+}
+
+.task-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.task-actions button {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: opacity 0.3s ease;
+}
+
+.complete-btn {
+    background: #48bb78;
+    color: white;
+}
+
+.delete-btn {
+    background: #f56565;
+    color: white;
+}
+
+.task-actions button:hover {
+    opacity: 0.8;
+}
+
+.empty-state {
+    text-align: center;
+    color: #718096;
+    font-style: italic;
+    padding: 40px;
+}
+
+.task-datetime.overdue {
+    color: #f56565;
+    font-weight: bold;
+}
+
+.notification {
+    font-weight: 500;
+}
+
+/* Additional utility classes */
+.text-success {
+    color: #48bb78;
+}
+
+.text-error {
+    color: #f56565;
+}
+
+.text-warning {
+    color: #ed8936;
+}
+
+@media (max-width: 768px) {
+    main {
+        grid-template-columns: 1fr;
+    }
+    
+    header h1 {
+        font-size: 2rem;
+    }
+    
+    .filter-controls {
+        justify-content: center;
+    }
+}

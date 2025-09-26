@@ -1,0 +1,31 @@
+{
+  "name": "etask",
+  "version": "1.0.0",
+  "description": "A simple and efficient task and appointment scheduling application",
+  "main": "index.html",
+  "scripts": {
+    "start": "python -m http.server 8000",
+    "dev": "python -m http.server 8000",
+    "build": "echo 'No build process needed for static files'",
+    "test": "echo 'Tests will be added in future versions'",
+    "deploy": "echo 'Deploy to your preferred hosting service'"
+  },
+  "keywords": [
+    "task",
+    "scheduler", 
+    "appointment",
+    "productivity",
+    "calendar",
+    "organizer"
+  ],
+  "author": "eTask Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ergashruzehaji/eTask.git"
+  },
+  "homepage": "https://ergashruzehaji.github.io/eTask",
+  "bugs": {
+    "url": "https://github.com/ergashruzehaji/eTask/issues"
+  }
+}

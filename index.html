@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eTask - Task & Appointment Scheduler</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#667eea">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>eTask</h1>
+            <p>Your Personal Task & Appointment Scheduler</p>
+        </header>
+
+        <main>
+            <section class="add-task-section">
+                <h2>Add New Task/Appointment</h2>
+                <form id="taskForm">
+                    <input type="text" id="taskTitle" placeholder="Task/Appointment Title" required>
+                    <input type="date" id="taskDate" required>
+                    <input type="time" id="taskTime" required>
+                    <select id="taskType">
+                        <option value="task">Task</option>
+                        <option value="appointment">Appointment</option>
+                    </select>
+                    <textarea id="taskDescription" placeholder="Description (optional)"></textarea>
+                    <button type="submit">Add Task</button>
+                </form>
+            </section>
+
+            <section class="tasks-section">
+                <h2>Your Tasks & Appointments</h2>
+                <div class="filter-controls">
+                    <button id="filterAll" class="active">All</button>
+                    <button id="filterTasks">Tasks</button>
+                    <button id="filterAppointments">Appointments</button>
+                    <button id="filterToday">Today</button>
+                </div>
+                <div id="tasksList" class="tasks-list">
+                    <!-- Tasks will be dynamically added here -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

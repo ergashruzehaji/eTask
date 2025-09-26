@@ -1405,9 +1405,15 @@ function renderCurrentView() {
 
 function updatePeriodDisplay() {
   const el = document.getElementById('current-period');
-  if (!el) return;
+  if (!el) {
+    console.warn('⚠️ current-period element not found');
+    return;
+  }
   const date = new Date(currentCalendarDate);
   let text = '';
+  
+  console.log(`🗓️ Updating period display for ${currentView} view, language: ${currentLanguage}`);
+  
   switch (currentView) {
     case 'day':
       text = formatTranslatedDate(date, 'full');
@@ -1426,6 +1432,8 @@ function updatePeriodDisplay() {
       text = date.getFullYear().toString();
       break;
   }
+  
+  console.log(`📝 Period display text: "${text}"`);
   el.textContent = text;
 }
 
@@ -1698,11 +1706,14 @@ function updateLanguage(langCode) {
     // Save language preference
     localStorage.setItem('task-tracker-language', langCode);
     
-    // Update calendar after language change
+    // Update calendar after language change - force complete re-render
     updatePeriodDisplay();
-    if (currentView === 'week' || currentView === 'day') {
-        renderCurrentView();
-    }
+    
+    // Re-render all calendar views to update translations
+    renderCurrentView(); // This will call the appropriate render function based on current view
+    
+    // Also force re-render of month calendar if it exists
+    renderCalendar();
     
     // Re-render sidebar tasks to update task displays
     displayTasks();
@@ -1711,7 +1722,9 @@ function updateLanguage(langCode) {
 // Translation helper functions for calendar dates
 function getTranslatedMonthName(monthIndex) {
     const key = `month_${monthIndex}`;
-    return translate(key);
+    const translatedName = translate(key);
+    console.log(`📅 Translating month ${monthIndex} (${key}) to "${translatedName}" in ${currentLanguage}`);
+    return translatedName;
 }
 
 function getTranslatedDayName(dayIndex) {

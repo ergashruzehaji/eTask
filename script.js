@@ -2868,21 +2868,38 @@ function updateDayCounters() {
   });
 }
 
-// Setup alarm for a single task based on start time
+// Setup alarm for a single task based on start time - Enhanced precision
 function setupAlarmForTask(task) {
   if (!task.startTime || !task.date) return;
   
   const now = new Date();
   const taskDateTime = getTaskDateTimeFromStartTime(task);
   
+  if (!taskDateTime) {
+    console.warn('⚠️ Invalid task date/time:', task);
+    return;
+  }
+  
   if (taskDateTime > now) {
     const timeUntilAlarm = taskDateTime.getTime() - now.getTime();
     
+    // Log alarm scheduling for debugging
+    console.log(`⏰ Scheduling alarm for "${task.text}" at ${taskDateTime.toLocaleString()}`);
+    console.log(`🕐 Time until alarm: ${Math.round(timeUntilAlarm / 60000)} minutes`);
+    
     const timeoutId = setTimeout(() => {
+      console.log(`🚨 ALARM TRIGGERED: "${task.text}" at ${new Date().toLocaleString()}`);
       triggerAlarm(task);
     }, timeUntilAlarm);
     
-    alarmTimeouts.push({ taskId: task.id, timeoutId });
+    alarmTimeouts.push({ 
+      taskId: task.id, 
+      timeoutId,
+      scheduledTime: taskDateTime.getTime(),
+      taskText: task.text 
+    });
+  } else {
+    console.log(`⏭️ Task "${task.text}" is in the past, skipping alarm`);
   }
 }
 
@@ -2892,10 +2909,44 @@ function setupAllAlarms() {
   alarmTimeouts.forEach(({ timeoutId }) => clearTimeout(timeoutId));
   alarmTimeouts = [];
   
+  console.log('🔄 Setting up alarms for all tasks...');
+  
   tasks.forEach(task => {
     setupAlarmForTask(task);
   });
+  
+  console.log(`✅ Set up ${alarmTimeouts.length} alarm(s)`);
+  
+  // Show scheduled alarms for debugging
+  if (alarmTimeouts.length > 0) {
+    console.log('📋 Upcoming alarms:');
+    alarmTimeouts
+      .sort((a, b) => a.scheduledTime - b.scheduledTime)
+      .forEach((alarm, index) => {
+        const alarmTime = new Date(alarm.scheduledTime);
+        console.log(`${index + 1}. "${alarm.taskText}" at ${alarmTime.toLocaleString()}`);
+      });
+  }
 }
+
+// Debug function to show currently scheduled alarms
+function showScheduledAlarms() {
+  console.log(`🔔 Currently scheduled alarms: ${alarmTimeouts.length}`);
+  if (alarmTimeouts.length > 0) {
+    alarmTimeouts
+      .sort((a, b) => a.scheduledTime - b.scheduledTime)
+      .forEach((alarm, index) => {
+        const alarmTime = new Date(alarm.scheduledTime);
+        const minutesUntil = Math.round((alarm.scheduledTime - Date.now()) / 60000);
+        console.log(`${index + 1}. "${alarm.taskText}" in ${minutesUntil} minutes (${alarmTime.toLocaleString()})`);
+      });
+  } else {
+    console.log('📭 No alarms currently scheduled');
+  }
+}
+
+// Make function available globally for debugging
+window.showScheduledAlarms = showScheduledAlarms;
 
 // Get task date and time from start time
 function getTaskDateTimeFromStartTime(task) {
@@ -3061,21 +3112,24 @@ function triggerAlarm(task) {
     clearAlarmForTask(task.id);
 }
 
-// Enhanced alarm sound with fallback
+// Enhanced alarm sound with fallback - Updated for 1-minute duration
 function playAlarmSoundWithFallback() {
-    console.log('🔔 Attempting to play alarm sound...');
+    console.log('🔔 Attempting to play alarm sound for exactly 1 minute...');
+    
+    // Stop any existing alarms first
+    stopAlarmSound();
     
     // Try Web Audio API first
     if (alarmContext && alarmContext.state === 'running') {
         playAlarmSound();
-        console.log('✅ Using Web Audio API for alarm');
+        console.log('✅ Using Web Audio API for alarm (1 minute)');
         return;
     }
     
-    // Fallback: Create a simple beep sound
+    // Fallback: Create a simple beep sound for 1 minute
     try {
         playFallbackAlarm();
-        console.log('✅ Using fallback alarm sound');
+        console.log('✅ Using fallback alarm sound (1 minute)');
     } catch (error) {
         console.error('❌ Failed to play alarm sound:', error);
         // Final fallback: Browser notification sound
@@ -3083,7 +3137,7 @@ function playAlarmSoundWithFallback() {
     }
 }
 
-// Fallback alarm using oscillator with simpler approach
+// Fallback alarm using oscillator - Enhanced for exactly 1 minute duration
 function playFallbackAlarm() {
     if (!alarmContext) {
         // Try to initialize context if not already done
@@ -3099,18 +3153,31 @@ function playFallbackAlarm() {
         alarmContext.resume();
     }
     
-    // Create a simple beep pattern
+    // Clear any existing alarm oscillators
+    stopAlarmSound();
+    
+    // Create a simple beep pattern - more frequent for better alarm effect
     const beepPattern = [
-        { freq: 800, duration: 0.2, pause: 0.1 },
-        { freq: 1000, duration: 0.2, pause: 0.1 },
-        { freq: 800, duration: 0.2, pause: 0.5 }
+        { freq: 880, duration: 0.15, pause: 0.15 }, // A5 note
+        { freq: 1108, duration: 0.15, pause: 0.15 }, // C#6 note  
+        { freq: 880, duration: 0.15, pause: 0.7 }   // A5 note with longer pause
     ];
     
     let currentTime = alarmContext.currentTime;
+    const alarmDuration = 60; // Exactly 1 minute
+    const patternDuration = beepPattern.reduce((sum, beep) => sum + beep.duration + beep.pause, 0);
+    const repetitions = Math.ceil(alarmDuration / patternDuration);
     
-    // Play beep pattern 10 times (30 seconds total)
-    for (let repeat = 0; repeat < 10; repeat++) {
+    console.log(`🔔 Playing alarm pattern ${repetitions} times for ${alarmDuration} seconds`);
+    
+    // Play beep pattern to fill exactly 60 seconds
+    for (let repeat = 0; repeat < repetitions; repeat++) {
+        const remainingTime = alarmDuration - (repeat * patternDuration);
+        if (remainingTime <= 0) break;
+        
         beepPattern.forEach(beep => {
+            if (currentTime - alarmContext.currentTime >= alarmDuration) return;
+            
             const oscillator = alarmContext.createOscillator();
             const gainNode = alarmContext.createGain();
             
@@ -3120,16 +3187,29 @@ function playFallbackAlarm() {
             oscillator.frequency.setValueAtTime(beep.freq, currentTime);
             oscillator.type = 'sine';
             
+            // Smooth volume envelope
             gainNode.gain.setValueAtTime(0, currentTime);
-            gainNode.gain.linearRampToValueAtTime(0.1, currentTime + 0.01);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + beep.duration);
+            gainNode.gain.linearRampToValueAtTime(0.15, currentTime + 0.02);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, currentTime + beep.duration);
             
             oscillator.start(currentTime);
             oscillator.stop(currentTime + beep.duration);
             
+            // Store references for cleanup
+            alarmOscillators.push(oscillator);
+            alarmGainNodes.push(gainNode);
+            
             currentTime += beep.duration + beep.pause;
         });
     }
+    
+    // Set master timeout to stop after exactly 60 seconds
+    setTimeout(() => {
+        console.log('⏰ 1-minute alarm duration completed');
+        if (alarmInterval) {
+            dismissAlarm();
+        }
+    }, 60000);
 }
 
 // Browser notification as final fallback
@@ -3154,7 +3234,7 @@ function showBrowserNotification() {
     console.log('📱 Browser notification shown as alarm fallback');
 }
 
-// Show alarm modal with task details
+// Show alarm modal with task details - Enhanced with precise timing
 function showAlarmModal(task) {
     const overlay = document.getElementById('alarm-overlay');
     const taskInfo = document.getElementById('alarm-task-info');
@@ -3166,23 +3246,37 @@ function showAlarmModal(task) {
         `${formatTimeDisplay(task.startTime)} - ${formatTimeDisplay(task.endTime)}` : 
         formatTimeDisplay(task.startTime);
     
-    // Populate task information
+    // Get current time for display
+    const now = new Date();
+    const currentTime = now.toLocaleTimeString('en-US', { 
+        hour12: true, 
+        hour: 'numeric', 
+        minute: '2-digit' 
+    });
+    
+    // Populate task information with enhanced details
     taskInfo.innerHTML = `
         <div class="task-priority ${task.priority}">
-            <strong>${task.text}</strong>
+            <strong>🔔 ${task.text}</strong>
         </div>
         <div class="task-details">
             📅 ${formatTranslatedDate(new Date(task.date), 'shortDate')}
-            ⏰ ${timeRange}
+            ⏰ Scheduled: ${timeRange}
+            🕐 Triggered: ${currentTime}
+        </div>
+        <div class="alarm-subtitle">
+            ⏱️ Alarm will stop automatically in <span id="alarm-countdown">60</span> seconds
         </div>
     `;
     
-    // Show overlay
+    // Show overlay with enhanced animation
     overlay.style.display = 'flex';
+    overlay.style.animation = 'alarmPulse 0.5s ease-out';
     
-    // Auto-dismiss after 60 seconds if not manually dismissed
+    // Auto-dismiss after exactly 60 seconds
     setTimeout(() => {
         if (overlay.style.display === 'flex') {
+            console.log('⏰ Auto-dismissing alarm after 60 seconds');
             dismissAlarm();
         }
     }, 60000);
@@ -3263,6 +3357,51 @@ function setupAlarmHandlers() {
     
     console.log('🚨 Alarm handlers initialized');
 }
+
+// Test alarm function for immediate testing (available in console)
+function testAlarm() {
+    console.log('🧪 Testing alarm system...');
+    
+    // Create a test task
+    const testTask = {
+        id: 'test-' + Date.now(),
+        text: '🧪 Test Alarm - Gym Workout',
+        startTime: new Date().toTimeString().slice(0, 5), // Current time
+        date: new Date().toISOString().split('T')[0], // Today
+        priority: 'high'
+    };
+    
+    // Trigger the alarm immediately
+    triggerAlarm(testTask);
+    
+    console.log('✅ Test alarm triggered! It should ring for exactly 1 minute.');
+    console.log('💡 You can dismiss it manually or wait for auto-dismissal.');
+}
+
+// Make test function available globally
+window.testAlarm = testAlarm;
+
+// Debug function to check alarm system status
+function debugAlarmSystem() {
+    console.log('🔍 ALARM SYSTEM DEBUG:');
+    console.log('1. Global tasks array:', typeof tasks !== 'undefined' ? tasks.length : 'undefined');
+    console.log('2. LocalStorage tasks:', JSON.parse(localStorage.getItem('tasks') || '[]').length);
+    console.log('3. Scheduled alarms:', alarmTimeouts.length);
+    console.log('4. Audio context:', alarmContext ? alarmContext.state : 'not initialized');
+    console.log('5. Alarm audio element:', !!alarmAudio);
+    
+    if (alarmTimeouts.length > 0) {
+        console.log('📋 Scheduled alarms:');
+        alarmTimeouts.forEach((alarm, i) => {
+            const time = new Date(alarm.scheduledTime);
+            const minutesUntil = Math.round((alarm.scheduledTime - Date.now()) / 60000);
+            console.log(`${i+1}. "${alarm.taskText}" at ${time.toLocaleString()} (${minutesUntil} min)`);
+        });
+    }
+}
+
+// Make debug function available globally
+window.debugAlarmSystem = debugAlarmSystem;
 
 // Show alarm notification
 function showAlarmNotification(task) {
@@ -4034,8 +4173,56 @@ function showSuggestionNotification(message, type = 'info') {
     }, 3000);
 }
 
+// Show current alarm status
+function showAlarmStatus() {
+    // Load tasks from localStorage directly
+    const tasksFromStorage = JSON.parse(localStorage.getItem('tasks') || '[]');
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    
+    // Find tasks scheduled for today with specific times
+    const todaysAlarms = tasksFromStorage.filter(task => 
+        task.date === today && 
+        task.startTime && 
+        task.startTime.trim() !== ''
+    );
+    
+    console.log(`📅 Checking alarms for today (${today})...`);
+    
+    if (todaysAlarms.length > 0) {
+        console.log('🔔 Active alarms for today:');
+        todaysAlarms.forEach(task => {
+            const taskTime = new Date(`${task.date}T${task.startTime}`);
+            const status = taskTime > now ? '⏰ Scheduled' : '✅ Past/Triggered';
+            const timeUntil = taskTime > now ? Math.round((taskTime - now) / 60000) : 'N/A';
+            console.log(`  ${status}: "${task.text}" at ${task.startTime}${timeUntil !== 'N/A' ? ` (in ${timeUntil} minutes)` : ''}`);
+        });
+    } else {
+        console.log('🔕 No alarms scheduled for today');
+    }
+    
+    // Also show global tasks array status
+    if (typeof tasks !== 'undefined' && tasks.length > 0) {
+        console.log(`📊 Global tasks array contains ${tasks.length} tasks`);
+    } else {
+        console.log('⚠️ Global tasks array is empty or undefined');
+    }
+}
+
 // Initialize suggestions system when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 DOM Content Loaded - Starting eTask initialization...');
+    
     // Add to existing initialization
     initializeSuggestions();
+    
+    // Setup alarms and show status after initialization
+    setTimeout(() => {
+        console.log('⏰ Setting up alarms after DOM load...');
+        setupAllAlarms();
+        showAlarmStatus();
+    }, 2000);
+    
+    console.log('✅ eTask application fully initialized with enhanced alarm system');
+    console.log('💡 Type "testAlarm()" in the console to test the alarm system immediately');
 });

@@ -2927,11 +2927,28 @@ let alarmCountdown = 60;
 // Create audio context for alarm sound
 function initializeAlarmAudio() {
     try {
-        alarmContext = new (window.AudioContext || window.webkitAudioContext)();
+        // Initialize context but don't start it yet (needs user interaction)
+        if (!alarmContext) {
+            alarmContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        console.log('🔊 Alarm audio system initialized');
     } catch (e) {
-        console.warn('Web Audio API not supported');
+        console.warn('⚠️ Web Audio API not supported:', e);
     }
 }
+
+// Resume audio context on user interaction (required by browsers)
+function resumeAudioContext() {
+    if (alarmContext && alarmContext.state === 'suspended') {
+        alarmContext.resume().then(() => {
+            console.log('🔊 Audio context resumed');
+        });
+    }
+}
+
+// Add event listeners for user interaction to enable audio
+document.addEventListener('click', resumeAudioContext, { once: true });
+document.addEventListener('keydown', resumeAudioContext, { once: true });
 
 // Generate gentle alarm sound with gradual volume increase
 function playAlarmSound() {
@@ -3031,8 +3048,8 @@ function triggerAlarm(task) {
     // Initialize countdown
     alarmCountdown = 60;
     
-    // Play alarm sound
-    playAlarmSound();
+    // Play alarm sound (with fallback)
+    playAlarmSoundWithFallback();
     
     // Show alarm modal
     showAlarmModal(task);
@@ -3042,6 +3059,99 @@ function triggerAlarm(task) {
     
     // Remove this alarm from timeouts
     clearAlarmForTask(task.id);
+}
+
+// Enhanced alarm sound with fallback
+function playAlarmSoundWithFallback() {
+    console.log('🔔 Attempting to play alarm sound...');
+    
+    // Try Web Audio API first
+    if (alarmContext && alarmContext.state === 'running') {
+        playAlarmSound();
+        console.log('✅ Using Web Audio API for alarm');
+        return;
+    }
+    
+    // Fallback: Create a simple beep sound
+    try {
+        playFallbackAlarm();
+        console.log('✅ Using fallback alarm sound');
+    } catch (error) {
+        console.error('❌ Failed to play alarm sound:', error);
+        // Final fallback: Browser notification sound
+        showBrowserNotification();
+    }
+}
+
+// Fallback alarm using oscillator with simpler approach
+function playFallbackAlarm() {
+    if (!alarmContext) {
+        // Try to initialize context if not already done
+        try {
+            alarmContext = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {
+            throw new Error('Web Audio API not available');
+        }
+    }
+    
+    // Resume context if suspended
+    if (alarmContext.state === 'suspended') {
+        alarmContext.resume();
+    }
+    
+    // Create a simple beep pattern
+    const beepPattern = [
+        { freq: 800, duration: 0.2, pause: 0.1 },
+        { freq: 1000, duration: 0.2, pause: 0.1 },
+        { freq: 800, duration: 0.2, pause: 0.5 }
+    ];
+    
+    let currentTime = alarmContext.currentTime;
+    
+    // Play beep pattern 10 times (30 seconds total)
+    for (let repeat = 0; repeat < 10; repeat++) {
+        beepPattern.forEach(beep => {
+            const oscillator = alarmContext.createOscillator();
+            const gainNode = alarmContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(alarmContext.destination);
+            
+            oscillator.frequency.setValueAtTime(beep.freq, currentTime);
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0, currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.1, currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + beep.duration);
+            
+            oscillator.start(currentTime);
+            oscillator.stop(currentTime + beep.duration);
+            
+            currentTime += beep.duration + beep.pause;
+        });
+    }
+}
+
+// Browser notification as final fallback
+function showBrowserNotification() {
+    // Check if notifications are supported and permitted
+    if ('Notification' in window) {
+        if (Notification.permission === 'granted') {
+            new Notification('Task Reminder', {
+                body: 'You have a task due now!',
+                icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🔔</text></svg>',
+                tag: 'task-alarm'
+            });
+        } else if (Notification.permission !== 'denied') {
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    showBrowserNotification();
+                }
+            });
+        }
+    }
+    
+    console.log('📱 Browser notification shown as alarm fallback');
 }
 
 // Show alarm modal with task details

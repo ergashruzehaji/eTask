@@ -77,7 +77,10 @@ const translations = {
     work_week: "Work Week", select_time: "Select time", switch_format: "Switch between AM/PM and 24-hour format",
     // Additional missing translations
     quick_presets: "Quick Presets", active_tasks: "Active Tasks",
-    suggestions_button: "Suggestions", submit_suggestion_text: "Submit Suggestion"
+    suggestions_button: "Suggestions", submit_suggestion_text: "Submit Suggestion",
+    // Alarm functionality
+    alarm_reminder: "Alarm Reminder", alarm_on: "Alarm On", alarm_off: "Alarm Off",
+    alarm_description: "Rings 5 minutes before and at scheduled time"
   },
   es: {
     view_day: "Día", view_week: "Semana", view_month: "Mes", add_task: "Agregar Tarea", cancel: "Cancelar",
@@ -135,7 +138,10 @@ const translations = {
     work_week: "Semana Laboral", select_time: "Seleccionar hora", switch_format: "Cambiar entre formato AM/PM y 24 horas",
     // Additional missing translations
     quick_presets: "Preajustes Rápidos", active_tasks: "Tareas Activas",
-    suggestions_button: "Sugerencias", submit_suggestion_text: "Enviar Sugerencia"
+    suggestions_button: "Sugerencias", submit_suggestion_text: "Enviar Sugerencia",
+    // Alarm functionality
+    alarm_reminder: "Recordatorio de Alarma", alarm_on: "Alarma Activada", alarm_off: "Alarma Desactivada",
+    alarm_description: "Suena 5 minutos antes y a la hora programada"
   },
   fr: {
     view_day: "Jour", view_week: "Semaine", view_month: "Mois", add_task: "Ajouter Tâche", cancel: "Annuler",
@@ -192,7 +198,10 @@ const translations = {
     work_week: "Semaine de Travail", select_time: "Sélectionner l'heure", switch_format: "Basculer entre le format AM/PM et 24 heures",
     // Additional missing translations
     quick_presets: "Préréglages Rapides", active_tasks: "Tâches Actives",
-    suggestions_button: "Suggestions", submit_suggestion_text: "Soumettre Suggestion"
+    suggestions_button: "Suggestions", submit_suggestion_text: "Soumettre Suggestion",
+    // Alarm functionality
+    alarm_reminder: "Rappel d'Alarme", alarm_on: "Alarme Activée", alarm_off: "Alarme Désactivée",
+    alarm_description: "Sonne 5 minutes avant et à l'heure programmée"
   },
   de: {
     view_day: "Tag", view_week: "Woche", view_month: "Monat", add_task: "Aufgabe hinzufügen", cancel: "Abbrechen",
@@ -576,6 +585,7 @@ let tasks = [];
 let currentCalendarDate = new Date(); // Current calendar view
 let selectedDate = null; // Selected calendar date
 let alarmTimeouts = []; // Store alarm timeouts
+let alarmTimeout = null; // Store current alarm timeout
 let currentFilter = 'all'; // Current sidebar filter
 let currentView = 'week'; // Current calendar view (day, week, month, year)
 let timeSlots = []; // Time slots for the calendar
@@ -922,6 +932,7 @@ function resetRecurringForm() {
     }
 }
 
+
 function showNotification(message) {
     // Create a temporary notification element
     const notification = document.createElement('div');
@@ -995,16 +1006,58 @@ function initializeTaskSidebar() {
     if (sidebarToggleRecurring && sidebarRecurringOptions) {
         sidebarToggleRecurring.addEventListener('click', () => {
             const isExpanded = sidebarRecurringOptions.style.display === 'block';
-            sidebarRecurringOptions.style.display = isExpanded ? 'none' : 'block';
-            sidebarToggleRecurring.classList.toggle('expanded', !isExpanded);
+            const newState = !isExpanded;
+            
+            sidebarRecurringOptions.style.display = newState ? 'block' : 'none';
+            sidebarToggleRecurring.classList.toggle('expanded', newState);
             
             // Update arrow icon
             const toggleIcon = sidebarToggleRecurring.querySelector('.toggle-icon');
+            const toggleText = sidebarToggleRecurring.querySelector('.toggle-text');
+            const helpText = document.querySelector('.recurring-help-text');
+            
             if (toggleIcon) {
-                toggleIcon.textContent = isExpanded ? '▶' : '▼';
+                toggleIcon.textContent = newState ? '▼' : '▶';
+            }
+            
+            if (toggleText) {
+                toggleText.textContent = newState ? 'Recurring Options' : 'Make Recurring Task';
+            }
+            
+            if (helpText) {
+                helpText.style.display = newState ? 'block' : 'none';
+            }
+            
+            // Show a helpful message when first opened
+            if (newState) {
+                console.log('🔄 Recurring options opened - choose a pattern to create multiple tasks automatically');
+                updateRecurringPreview(); // Initialize preview
+            } else {
+                // Reset submit button text when closing
+                updateSubmitButtonText();
             }
         });
     }
+    
+    // Add event listeners to update preview when settings change
+    const recurringType = document.getElementById('sidebar-recurring-type');
+    const recurringCount = document.getElementById('sidebar-recurring-count');
+    const durationType = document.getElementById('sidebar-duration-type');
+    const weekdayCheckboxes = document.querySelectorAll('#sidebar-weekly-options input[type="checkbox"]');
+    
+    if (recurringType) {
+        recurringType.addEventListener('change', updateRecurringPreview);
+    }
+    if (recurringCount) {
+        recurringCount.addEventListener('input', updateRecurringPreview);
+    }
+    if (durationType) {
+        durationType.addEventListener('change', updateRecurringPreview);
+    }
+    
+    weekdayCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateRecurringPreview);
+    });
     
     // Initialize enhanced recurring system
     initializeEnhancedRecurring();
@@ -1020,7 +1073,13 @@ function initializeTaskSidebar() {
     if (sidebarTimeFormatToggle) {
         sidebarTimeFormatToggle.addEventListener('click', toggleSidebarTimeFormat);
     }
-    
+
+    // Handle alarm toggle
+    const sidebarAlarmToggle = document.getElementById('sidebar-alarm-toggle');
+    if (sidebarAlarmToggle) {
+        sidebarAlarmToggle.addEventListener('click', toggleSidebarAlarm);
+    }
+
     // Handle preset buttons
     const sidebarPresetBtns = sidebar.querySelectorAll('.preset-btn');
     sidebarPresetBtns.forEach(btn => {
@@ -1064,6 +1123,24 @@ function clearSidebarForm() {
     weekdayCheckboxes.forEach(checkbox => {
         checkbox.checked = false;
     });
+    
+    // Reset alarm toggle
+    const alarmToggle = document.getElementById('sidebar-alarm-toggle');
+    const alarmInfo = document.getElementById('alarm-info');
+    if (alarmToggle) {
+        alarmToggle.setAttribute('data-enabled', 'false');
+        const icon = alarmToggle.querySelector('.alarm-icon');
+        const text = alarmToggle.querySelector('.alarm-text');
+        if (icon) icon.textContent = '🔕';
+        if (text) {
+            text.setAttribute('data-translate', 'alarm_off');
+            text.textContent = translate('alarm_off');
+        }
+        if (alarmInfo) alarmInfo.style.display = 'none';
+    }
+    
+    // Reset submit button text
+    updateSubmitButtonText();
 }
 
 function showTaskSidebar(dateString) {
@@ -1166,6 +1243,37 @@ function toggleSidebarTimeFormat() {
     if (endTime) endTime.step = is24Hour ? "60" : "300";
 }
 
+function toggleSidebarAlarm() {
+    const toggle = document.getElementById('sidebar-alarm-toggle');
+    const alarmInfo = document.getElementById('alarm-info');
+    
+    if (!toggle) return;
+    
+    const isEnabled = toggle.getAttribute('data-enabled') === 'true';
+    const newState = !isEnabled;
+    
+    // Update button state
+    toggle.setAttribute('data-enabled', newState);
+    
+    // Update visual elements
+    const icon = toggle.querySelector('.alarm-icon');
+    const text = toggle.querySelector('.alarm-text');
+    
+    if (newState) {
+        icon.textContent = '🔔';
+        text.setAttribute('data-translate', 'alarm_on');
+        text.textContent = translate('alarm_on');
+        alarmInfo.style.display = 'block';
+    } else {
+        icon.textContent = '🔕';
+        text.setAttribute('data-translate', 'alarm_off');
+        text.textContent = translate('alarm_off');
+        alarmInfo.style.display = 'none';
+    }
+    
+    console.log(`🔔 Alarm toggled: ${newState ? 'ON' : 'OFF'}`);
+}
+
 function applySidebarRecurringPreset(preset) {
     const recurringType = document.getElementById('sidebar-recurring-type');
     const recurringCount = document.getElementById('sidebar-recurring-count');
@@ -1213,6 +1321,11 @@ function applySidebarRecurringPreset(preset) {
             if (todayCheckbox) todayCheckbox.checked = true;
             break;
     }
+    
+    // Update preview and submit button after applying preset
+    setTimeout(() => {
+        updateRecurringPreview();
+    }, 100);
 }
 
 function handleSidebarFormSubmit(e) {
@@ -1227,6 +1340,10 @@ function handleSidebarFormSubmit(e) {
     
     if (!taskText) return;
     
+    // Get alarm setting
+    const alarmToggle = document.getElementById('sidebar-alarm-toggle');
+    const alarmEnabled = alarmToggle?.getAttribute('data-enabled') === 'true';
+    
     const baseTask = {
         text: taskText,
         date: selectedSidebarDate,
@@ -1234,6 +1351,7 @@ function handleSidebarFormSubmit(e) {
         endTime: endTime,
         alarmTime: startTime,
         priority: priority,
+        alarmEnabled: alarmEnabled,
         completed: false,
         acknowledged: false,
         createdAt: new Date().toISOString()
@@ -1628,9 +1746,15 @@ function createDayColumn(date) {
             const timeRange = task.endTime ? 
                 `${formatTimeDisplay(task.startTime)} - ${formatTimeDisplay(task.endTime)}` : 
                 formatTimeDisplay(task.startTime);
+            
+            // Add alarm icon if alarm is enabled
+            const alarmIcon = task.alarmEnabled ? 
+                `<span class="task-alarm-icon" title="Alarm enabled - will ring 5 minutes before and at scheduled time">🔔</span>` : 
+                '';
+            
             html += `
-                <div class="task-block ${task.priority}-priority" title="${task.text} (${timeRange})">
-                    <div class="task-title">${task.text}</div>
+                <div class="task-block ${task.priority}-priority" title="${task.text} (${timeRange})${task.alarmEnabled ? ' - Alarm Enabled' : ''}">
+                    <div class="task-title">${alarmIcon}${task.text}</div>
                     <div class="task-time">${timeRange}</div>
                 </div>
             `;
@@ -1821,15 +1945,56 @@ function updateLanguage(langCode) {
     // Also force re-render of month calendar if it exists
     renderCalendar();
     
+    // Force update all month display elements to ensure nothing is missed
+    forceUpdateAllMonthDisplays();
+    
     // Re-render sidebar tasks to update task displays
     displayTasks();
+}
+
+// Force update all month display elements
+function forceUpdateAllMonthDisplays() {
+    const year = currentCalendarDate.getFullYear();
+    const month = currentCalendarDate.getMonth();
+    const monthKey = `month_${month}`;
+    const monthName = translations[currentLanguage][monthKey] || translations['en'][monthKey];
+    const monthYearText = `${monthName} ${year}`;
+    
+    console.log(`🔄 forceUpdateAllMonthDisplays: Setting "${monthYearText}" in ${currentLanguage}`);
+    
+    // Update all possible month display elements
+    const monthDisplayElements = [
+        document.getElementById('current-period'),
+        document.getElementById('current-month'),
+        currentMonthDisplay
+    ];
+    
+    monthDisplayElements.forEach((element, index) => {
+        if (element) {
+            console.log(`📅 Updating month display element ${index + 1}: ${element.id || 'currentMonthDisplay'}`);
+            element.textContent = monthYearText;
+        }
+    });
+    
+    // Also check for any elements with class that might contain month names
+    const monthElements = document.querySelectorAll('.month-display, .current-month, .calendar-header');
+    monthElements.forEach((element, index) => {
+        console.log(`📅 Updating month element with class ${element.className}`);
+        element.textContent = monthYearText;
+    });
 }
 
 // Translation helper functions for calendar dates
 function getTranslatedMonthName(monthIndex) {
     const key = `month_${monthIndex}`;
     const translatedName = translate(key);
-    console.log(`📅 Translating month ${monthIndex} (${key}) to "${translatedName}" in ${currentLanguage}`);
+    
+    // Enhanced debugging
+    console.log(`📅 getTranslatedMonthName: month ${monthIndex} (${key})`);
+    console.log(`   Current language: ${currentLanguage}`);
+    console.log(`   Translated to: "${translatedName}"`);
+    console.log(`   Available in current language:`, translations[currentLanguage] && translations[currentLanguage][key] ? 'YES' : 'NO');
+    
     return translatedName;
 }
 
@@ -2528,6 +2693,7 @@ function initializeApp() {
     initializeAlarmAudio(); // Initialize alarm sound system  
     setupAlarmHandlers(); // Setup alarm UI handlers
     startNotificationChecker();
+    startAlarmMonitoring(); // Start monitoring for task alarms
     initializeRecurringSection(); // Initialize recurring task functionality
     initializeTaskSidebar(); // Initialize task sidebar functionality
     initializeLanguage(); // Initialize language features
@@ -2889,7 +3055,7 @@ function displayTask(task) {
   li.classList.add('task-item'); // Add task-item class for styling and selection
   li.dataset.taskId = task.id; // Add task ID for bulk operations
   
-  if (task.alarmTime) {
+  if (task.alarmEnabled) {
     li.classList.add('has-alarm');
   }
   if (task.completed) {
@@ -2910,9 +3076,9 @@ function displayTask(task) {
     taskDetails.push(`<span class="task-day">${task.day.charAt(0).toUpperCase() + task.day.slice(1)}</span>`);
   }
   
-  // Add alarm time
-  if (task.alarmTime) {
-    taskDetails.push(`<span class="task-alarm">🔔 ${task.alarmTime}</span>`);
+  // Add alarm indicator
+  if (task.alarmEnabled) {
+    taskDetails.push(`<span class="task-alarm" title="Alarm enabled - will ring 5 minutes before and at scheduled time">🔔 Alarm</span>`);
   }
   
   li.innerHTML = `
@@ -3122,93 +3288,335 @@ document.addEventListener('keydown', resumeAudioContext, { once: true });
 
 // Generate gentle alarm sound with gradual volume increase
 function playAlarmSound() {
-    if (!alarmContext) return;
+    console.log('🔔 Playing modern pleasant alarm sound');
     
     // Stop any existing alarm
     stopAlarmSound();
     
-    // Create multiple oscillators for rich, gentle sound
-    const fundamentalFreq = 432; // Calming frequency (A4 tuned to 432Hz)
-    const harmonicFreqs = [432, 432 * 1.5, 432 * 2]; // Fundamental + harmonics for warmth
-    
-    alarmOscillators = [];
-    alarmGainNodes = [];
-    
-    // Create a gentle, warm sound with multiple harmonics
-    harmonicFreqs.forEach((freq, index) => {
-        const oscillator = alarmContext.createOscillator();
-        const gainNode = alarmContext.createGain();
-        const filter = alarmContext.createBiquadFilter();
+    // Use the HTML5 audio element for our modern alarm sound
+    if (alarmAudio) {
+        alarmAudio.currentTime = 0; // Reset to beginning
+        alarmAudio.volume = 0.7; // Pleasant volume level
         
-        // Configure filter for warmth
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(800, alarmContext.currentTime);
-        filter.Q.setValueAtTime(0.5, alarmContext.currentTime);
+        // Play the modern alarm sound
+        const playPromise = alarmAudio.play();
         
-        // Connect audio chain: oscillator -> filter -> gain -> destination
-        oscillator.connect(filter);
-        filter.connect(gainNode);
-        gainNode.connect(alarmContext.destination);
+        if (playPromise !== undefined) {
+            playPromise
+                .then(() => {
+                    console.log('🎵 Modern alarm sound playing successfully');
+                })
+                .catch((error) => {
+                    console.warn('⚠️ Could not play alarm audio:', error);
+                    // Fallback to notification sound if audio fails
+                    playNotificationBeep();
+                });
+        }
         
-        // Use sine wave for smoothness
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(freq, alarmContext.currentTime);
-        
-        // Set volume based on harmonic (fundamental loudest)
-        const baseVolume = index === 0 ? 0.15 : 0.05 / (index + 1);
-        
-        // Start with very low volume and gradually increase over 10 seconds
-        gainNode.gain.setValueAtTime(0.001, alarmContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(baseVolume * 0.3, alarmContext.currentTime + 5);
-        gainNode.gain.exponentialRampToValueAtTime(baseVolume * 0.6, alarmContext.currentTime + 15);
-        gainNode.gain.exponentialRampToValueAtTime(baseVolume, alarmContext.currentTime + 30);
-        
-        // Add gentle vibrato for life
-        const lfo = alarmContext.createOscillator();
-        const lfoGain = alarmContext.createGain();
-        lfo.type = 'sine';
-        lfo.frequency.setValueAtTime(4.5, alarmContext.currentTime); // Slow vibrato
-        lfoGain.gain.setValueAtTime(3, alarmContext.currentTime); // Subtle depth
-        
-        lfo.connect(lfoGain);
-        lfoGain.connect(oscillator.frequency);
-        
-        lfo.start(alarmContext.currentTime);
-        oscillator.start(alarmContext.currentTime);
-        
-        // Schedule stop after 60 seconds
-        lfo.stop(alarmContext.currentTime + 60);
-        oscillator.stop(alarmContext.currentTime + 60);
-        
-        alarmOscillators.push(oscillator);
-        alarmGainNodes.push(gainNode);
-    });
-    
-    // Additional safety timeout to ensure alarm stops after exactly 60 seconds
-    setTimeout(() => {
-        stopAlarmSound();
-    }, 60000);
-    
-    console.log('🔔 Playing gentle alarm sound with gradual volume increase');
+        // Set alarm timeout to stop after 1 minute
+        alarmTimeout = setTimeout(() => {
+            stopAlarmSound();
+        }, 60000);
+    } else {
+        console.warn('⚠️ Alarm audio element not found');
+        // Fallback to notification beep
+        playNotificationBeep();
+    }
 }
 
 function stopAlarmSound() {
-    // Stop all oscillators
-    alarmOscillators.forEach(oscillator => {
-        if (oscillator) {
-            try {
-                oscillator.stop();
-            } catch (e) {
-                // Oscillator already stopped
+    // Stop HTML5 audio element
+    if (alarmAudio) {
+        alarmAudio.pause();
+        alarmAudio.currentTime = 0;
+    }
+    
+    // Clear any alarm timeout
+    if (alarmTimeout) {
+        clearTimeout(alarmTimeout);
+        alarmTimeout = null;
+    }
+    
+    // Stop any Web Audio API oscillators (for backwards compatibility)
+    if (alarmOscillators) {
+        alarmOscillators.forEach(oscillator => {
+            if (oscillator) {
+                try {
+                    oscillator.stop();
+                } catch (e) {
+                    // Oscillator already stopped
+                }
             }
+        });
+        alarmOscillators = [];
+    }
+    
+    if (alarmGainNodes) {
+        alarmGainNodes = [];
+    }
+    
+    console.log('🔕 Stopped modern alarm sound');
+}
+
+// Fallback notification beep using Web Audio API
+function playNotificationBeep() {
+    try {
+        if (!alarmContext) {
+            alarmContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        
+        const oscillator = alarmContext.createOscillator();
+        const gainNode = alarmContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(alarmContext.destination);
+        
+        // Create a pleasant notification beep
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(800, alarmContext.currentTime);
+        
+        // Quick fade in and out
+        gainNode.gain.setValueAtTime(0, alarmContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.3, alarmContext.currentTime + 0.1);
+        gainNode.gain.linearRampToValueAtTime(0, alarmContext.currentTime + 0.5);
+        
+        oscillator.start(alarmContext.currentTime);
+        oscillator.stop(alarmContext.currentTime + 0.5);
+        
+        console.log('🔔 Playing fallback notification beep');
+    } catch (e) {
+        console.warn('⚠️ Could not play notification beep:', e);
+    }
+}
+
+// Start monitoring tasks for alarms (5 minutes before and at scheduled time)
+function startAlarmMonitoring() {
+    console.log('🔔 Starting alarm monitoring system');
+    
+    // Check every minute for upcoming alarms
+    setInterval(checkForUpcomingAlarms, 60000);
+    
+    // Also check immediately
+    checkForUpcomingAlarms();
+}
+
+// Check all tasks for upcoming alarms
+function checkForUpcomingAlarms() {
+    const now = new Date();
+    const currentTimeString = now.toTimeString().substring(0, 5); // HH:MM format
+    const todayDateString = now.toISOString().split('T')[0]; // YYYY-MM-DD format
+    
+    console.log(`⏰ Checking alarms at ${currentTimeString} on ${todayDateString}`);
+    
+    // Get today's tasks
+    const todayTasks = tasks.filter(task => 
+        task.date === todayDateString && 
+        task.alarmEnabled === true && 
+        task.startTime && 
+        !task.completed &&
+        !task.alarmTriggered && // Don't trigger the same alarm twice
+        !task.fiveMinuteWarningTriggered // Track 5-minute warnings separately
+    );
+    
+    todayTasks.forEach(task => {
+        const taskTime = task.startTime; // HH:MM format
+        const [taskHour, taskMinute] = taskTime.split(':').map(Number);
+        const taskDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), taskHour, taskMinute);
+        const timeDiff = taskDate - now; // Difference in milliseconds
+        const minutesUntil = Math.floor(timeDiff / (1000 * 60));
+        
+        // Trigger 5-minute warning
+        if (minutesUntil === 5 && !task.fiveMinuteWarningTriggered) {
+            console.log(`🔔 5-minute warning for task: ${task.text}`);
+            triggerAlarm(task, '5-minute-warning');
+            task.fiveMinuteWarningTriggered = true;
+            saveTasksToLocalStorage(); // Save the state
+        }
+        
+        // Trigger exact time alarm
+        if (minutesUntil === 0 && !task.alarmTriggered) {
+            console.log(`🔔 Exact time alarm for task: ${task.text}`);
+            triggerAlarm(task, 'exact-time');
+            task.alarmTriggered = true;
+            saveTasksToLocalStorage(); // Save the state
         }
     });
+}
+
+// Trigger an alarm for a specific task
+function triggerAlarm(task, type) {
+    const isWarning = type === '5-minute-warning';
+    const title = isWarning ? 
+        `⚠️ Reminder: Task in 5 minutes` : 
+        `🔔 Task Time: ${task.startTime}`;
     
-    // Clear arrays
-    alarmOscillators = [];
-    alarmGainNodes = [];
+    const message = isWarning ? 
+        `"${task.text}" is scheduled to start at ${task.startTime}` : 
+        `Time for: "${task.text}"`;
     
-    console.log('🔕 Stopped gentle alarm sound');
+    // Play the alarm sound
+    playAlarmSound();
+    
+    // Show browser notification if permissions granted
+    if (Notification.permission === 'granted') {
+        const notification = new Notification(title, {
+            body: message,
+            icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔔</text></svg>',
+            requireInteraction: true
+        });
+        
+        // Auto-close notification after 10 seconds for warnings, 30 seconds for exact time
+        setTimeout(() => {
+            notification.close();
+        }, isWarning ? 10000 : 30000);
+    }
+    
+    // Show in-app notification
+    showNotification(`${title}: ${message}`);
+    
+    console.log(`🔔 Alarm triggered for task "${task.text}" at ${task.startTime} (${type})`);
+}
+
+// Update recurring preview and submit button
+function updateRecurringPreview() {
+    const recurringOptions = document.getElementById('sidebar-recurring-options');
+    const preview = document.getElementById('recurring-preview');
+    const previewContent = document.getElementById('preview-content');
+    
+    if (!recurringOptions || recurringOptions.style.display === 'none') {
+        if (preview) preview.style.display = 'none';
+        updateSubmitButtonText();
+        return;
+    }
+    
+    const recurringType = document.getElementById('sidebar-recurring-type')?.value;
+    const recurringCount = parseInt(document.getElementById('sidebar-recurring-count')?.value) || 3;
+    const taskTitle = document.getElementById('sidebar-task-title')?.value || 'Task';
+    const startTime = document.getElementById('sidebar-start-time')?.value || '09:00';
+    
+    if (recurringType === 'none') {
+        preview.style.display = 'none';
+        updateSubmitButtonText();
+        return;
+    }
+    
+    // Calculate preview tasks
+    let previewTasks = [];
+    const baseDate = new Date(selectedSidebarDate || new Date());
+    
+    try {
+        // Create a mock base task for preview
+        const mockBaseTask = {
+            text: taskTitle,
+            date: baseDate.toISOString().split('T')[0],
+            startTime: startTime
+        };
+        
+        // Generate preview using the same logic as the actual generation
+        const previewList = generateRecurringPreview(mockBaseTask, recurringType, recurringCount);
+        
+        if (previewList.length > 0) {
+            let previewHTML = `<div class="preview-summary">
+                <strong>Will create ${previewList.length} tasks:</strong>
+            </div>
+            <ul class="preview-task-list">`;
+            
+            previewList.slice(0, 5).forEach((task, index) => { // Show first 5 tasks
+                const taskDate = new Date(task.date);
+                const dateStr = taskDate.toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric',
+                    weekday: 'short'
+                });
+                previewHTML += `
+                    <li class="preview-task-item">
+                        <span>${dateStr}: ${task.text}</span>
+                        <span>${task.startTime}</span>
+                    </li>`;
+            });
+            
+            if (previewList.length > 5) {
+                previewHTML += `<li class="preview-task-item">
+                    <span><em>... and ${previewList.length - 5} more</em></span>
+                </li>`;
+            }
+            
+            previewHTML += '</ul>';
+            
+            previewContent.innerHTML = previewHTML;
+            preview.style.display = 'block';
+            
+            updateSubmitButtonText(previewList.length);
+        }
+    } catch (error) {
+        console.warn('Preview generation error:', error);
+        preview.style.display = 'none';
+        updateSubmitButtonText();
+    }
+}
+
+// Generate recurring preview (simplified version of the main generation)
+function generateRecurringPreview(baseTask, recurringType, count) {
+    const tasks = [];
+    const baseDate = new Date(baseTask.date);
+    
+    switch (recurringType) {
+        case 'daily':
+            for (let i = 0; i < Math.min(count, 10); i++) { // Limit preview to 10
+                const taskDate = new Date(baseDate);
+                taskDate.setDate(baseDate.getDate() + i);
+                tasks.push({
+                    ...baseTask,
+                    date: taskDate.toISOString().split('T')[0]
+                });
+            }
+            break;
+            
+        case 'weekly':
+            const selectedDays = getSidebarSelectedWeekdays();
+            if (selectedDays.length === 0) selectedDays.push(baseDate.getDay());
+            
+            let weekCount = 0;
+            while (tasks.length < Math.min(count, 10)) {
+                selectedDays.forEach(dayOfWeek => {
+                    if (tasks.length >= count) return;
+                    const taskDate = new Date(baseDate);
+                    const dayDiff = (dayOfWeek - baseDate.getDay() + 7) % 7;
+                    taskDate.setDate(baseDate.getDate() + dayDiff + (weekCount * 7));
+                    tasks.push({
+                        ...baseTask,
+                        date: taskDate.toISOString().split('T')[0]
+                    });
+                });
+                weekCount++;
+            }
+            break;
+            
+        case 'monthly':
+            for (let i = 0; i < Math.min(count, 10); i++) {
+                const taskDate = new Date(baseDate);
+                taskDate.setMonth(baseDate.getMonth() + i);
+                tasks.push({
+                    ...baseTask,
+                    date: taskDate.toISOString().split('T')[0]
+                });
+            }
+            break;
+    }
+    
+    return tasks;
+}
+
+// Update submit button text to show task count
+function updateSubmitButtonText(taskCount = 1) {
+    const submitText = document.getElementById('sidebar-submit-text');
+    if (!submitText) return;
+    
+    if (taskCount === 1) {
+        submitText.textContent = translate('add_task');
+    } else {
+        submitText.textContent = `Add ${taskCount} Tasks`;
+    }
 }
 
 // Trigger alarm with full UI
@@ -3737,12 +4145,21 @@ function renderCalendar() {
   const year = currentCalendarDate.getFullYear();
   const month = currentCalendarDate.getMonth();
   
-  // Update month display
-    if (currentMonthDisplay) {
+  // Update month display using translation system
+  console.log(`🗓️ renderCalendar: Rendering ${year}-${month} in language ${currentLanguage}`);
+  
+  if (currentMonthDisplay) {
         const monthKey = `month_${month}`;
         const monthName = translations[currentLanguage][monthKey] || translations['en'][monthKey];
-        currentMonthDisplay.textContent = `${monthName} ${year}`;
+        const displayText = `${monthName} ${year}`;
+        currentMonthDisplay.textContent = displayText;
+        console.log(`📅 renderCalendar updated currentMonthDisplay (${currentMonthDisplay.id}): "${displayText}"`);
+    } else {
+        console.warn('⚠️ currentMonthDisplay element not found in renderCalendar');
     }
+    
+    // Also update the period display to ensure consistency
+    updatePeriodDisplay();
   
   // Get first day of month and number of days
   const firstDay = new Date(year, month, 1);

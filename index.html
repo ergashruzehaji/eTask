@@ -303,6 +303,20 @@
                 </select>
               </div>
 
+              <!-- Alarm Toggle -->
+              <div class="form-group alarm-toggle-group">
+                <label class="form-label" data-translate="alarm_reminder">🔔 Alarm Reminder</label>
+                <div class="alarm-toggle-container">
+                  <button type="button" id="sidebar-alarm-toggle" class="alarm-toggle-btn" data-enabled="false">
+                    <span class="alarm-icon">🔕</span>
+                    <span class="alarm-text" data-translate="alarm_off">Alarm Off</span>
+                  </button>
+                  <div class="alarm-info" id="alarm-info" style="display: none;">
+                    <small data-translate="alarm_description">Rings 5 minutes before and at scheduled time</small>
+                  </div>
+                </div>
+              </div>
+
               <!-- Time Format Toggle -->
               <div class="form-group">
                 <label class="form-label" data-translate="time_format">Time Format</label>
@@ -323,17 +337,30 @@
               <div class="recurring-section">
                 <div class="recurring-header">
                   <button type="button" id="sidebar-toggle-recurring" class="recurring-toggle-btn">
-                    🔄 <span class="toggle-text" data-translate="recurring">Add Recurring</span> <span class="toggle-icon">▶</span>
+                    🔄 <span class="toggle-text" data-translate="recurring">Make Recurring Task</span> <span class="toggle-icon">▶</span>
                   </button>
+                  <div class="recurring-help-text" style="display: none;">
+                    <small>💡 Perfect for: Daily workouts, Weekly meetings, Monthly reports, Gym sessions (Tue/Wed/Thu)</small>
+                  </div>
                 </div>
                 <div id="sidebar-recurring-options" class="recurring-options" style="display: none;">
+                  
+                  <!-- Recurring Preview -->
+                  <div id="recurring-preview" class="recurring-preview" style="display: none;">
+                    <div class="preview-header">
+                      <strong>📋 Task Preview</strong>
+                    </div>
+                    <div id="preview-content" class="preview-content">
+                      <!-- Dynamic content will be inserted here -->
+                    </div>
+                  </div>
                   <div class="recurring-type-selector">
                     <label class="form-label">📅 Repeat Pattern</label>
                     <select id="sidebar-recurring-type" class="form-select">
-                      <option value="none">🚫 No Repeat</option>
-                      <option value="daily">📅 Daily</option>
-                      <option value="weekly">📆 Weekly</option>
-                      <option value="monthly">🗓️ Monthly</option>
+                      <option value="none">🚫 No Repeat - Single Task Only</option>
+                      <option value="daily">📅 Daily - Every Day</option>
+                      <option value="weekly">📆 Weekly - Specific Days of Week</option>
+                      <option value="monthly">🗓️ Monthly - Same Date Each Month</option>
                       <option value="custom">🎛️ Custom Schedule</option>
                     </select>
                   </div>
@@ -581,9 +608,11 @@
     </div>
   </div>
 
-  <!-- Gentle Alarm Audio -->
-  <audio id="alarm-audio" preload="auto" loop>
-    <!-- We'll generate the alarm sound programmatically -->
+  <!-- Modern Pleasant Alarm Audio -->
+  <audio id="alarm-audio" preload="auto">
+    <source src="modern-alarm.wav" type="audio/wav">
+    <source src="task-alarm.mp3" type="audio/mpeg">
+    <!-- Fallback for older browsers -->
   </audio>
 
   <!-- Floating Action Tabs -->

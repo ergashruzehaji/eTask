@@ -48,16 +48,16 @@ const translations = {
     // Priority Legend
     priority_legend: "Priority Legend", high_priority: "High Priority", 
     medium_priority: "Medium Priority", low_priority: "Low Priority",
-    // Floating Tabs and Suggestions System
-    suggestions: "Suggestions", suggestions_form_title: "Send us Your Suggestions",
-    name_label: "Name", email_label: "Email", suggestions_label: "Your Suggestions",
+    // Floating Tabs and Feedback System
+    suggestions: "Feedback", suggestions_form_title: "Send us Your Feedback",
+    name_label: "Name", email_label: "Email", suggestions_label: "Your Feedback",
     name_placeholder: "Enter your name", email_placeholder: "Enter your email address",
-    suggestions_placeholder: "Share your suggestions, feedback, or ideas with us (up to 500 words)...",
-    submit_suggestions: "Submit Suggestions", character_count: "characters remaining",
+    suggestions_placeholder: "Share your feedback, suggestions, or ideas with us (up to 500 words)...",
+    submit_suggestions: "Submit Feedback", character_count: "characters remaining",
     success_title: "Thank you!", success_message: "Your message has been successfully sent.",
     name_required: "Name is required", email_required: "Email is required",
-    email_invalid: "Please enter a valid email address", suggestions_required: "Please share your suggestions with us",
-    suggestions_too_long: "Suggestions must be 500 words or less",
+    email_invalid: "Please enter a valid email address", suggestions_required: "Please share your feedback with us",
+    suggestions_too_long: "Feedback must be 500 words or less",
     // Additional Interface Elements
     task_input_placeholder: "Enter a task...", daily_month: "Daily for Month", 
     weekly_year: "Weekly for Year", time_format: "Time Format",
@@ -65,19 +65,19 @@ const translations = {
     tasks_for: "Tasks for", tasks: "Tasks", tomorrow: "Tomorrow",
     // Additional form translations
     your_name: "Your Name", email_address: "Email Address", 
-    your_suggestions: "Your Suggestions", characters: "characters", 
-    submit_suggestion: "Submit Suggestion",
+    your_suggestions: "Your Feedback", characters: "characters", 
+    submit_suggestion: "Submit Feedback",
     // Modal and overlay elements
     quick_add_task: "Quick Add Task", what_needs_done: "What needs to be done?",
     perfect: "Perfect!", thank_you: "Thank you!", feedback_suggestions: "Feedback & Suggestions",
     share_feedback: "Share your feedback to help improve Task Tracker",
-    describe_suggestions: "Describe your suggestions, feature requests, or improvements...",
+    describe_suggestions: "Describe your feedback, feature requests, or improvements...",
     suggestions_title: "Feedback & Suggestions", suggestions_subtitle: "Share your feedback to help improve Task Tracker",
     weekends: "Weekends", daily_slash_month: "Daily/Month", weekly_slash_year: "Weekly/Year",
     work_week: "Work Week", select_time: "Select time", switch_format: "Switch between AM/PM and 24-hour format",
     // Additional missing translations
     quick_presets: "Quick Presets", active_tasks: "Active Tasks",
-    suggestions_button: "Suggestions", submit_suggestion_text: "Submit Suggestion",
+    suggestions_button: "Feedback", submit_suggestion_text: "Submit Feedback",
     // Alarm functionality
     alarm_reminder: "Alarm Reminder", alarm_on: "Alarm On", alarm_off: "Alarm Off",
     alarm_description: "Rings 5 minutes before and at scheduled time",
@@ -114,16 +114,16 @@ const translations = {
     // Priority Legend
     priority_legend: "Leyenda de Prioridades", high_priority: "Alta Prioridad",
     medium_priority: "Prioridad Media", low_priority: "Baja Prioridad",
-    // Floating Tabs and Suggestions System
-    suggestions: "Sugerencias", suggestions_form_title: "Envíanos tus Sugerencias",
-    name_label: "Nombre", email_label: "Correo Electrónico", suggestions_label: "Tus Sugerencias",
+    // Floating Tabs and Feedback System
+    suggestions: "Comentarios", suggestions_form_title: "Envíanos tus Comentarios",
+    name_label: "Nombre", email_label: "Correo Electrónico", suggestions_label: "Tus Comentarios",
     name_placeholder: "Ingresa tu nombre", email_placeholder: "Ingresa tu correo electrónico",
-    suggestions_placeholder: "Comparte tus sugerencias, comentarios o ideas con nosotros (hasta 500 palabras)...",
-    submit_suggestions: "Enviar Sugerencias", character_count: "caracteres restantes",
+    suggestions_placeholder: "Comparte tus comentarios, sugerencias o ideas con nosotros (hasta 500 palabras)...",
+    submit_suggestions: "Enviar Comentarios", character_count: "caracteres restantes",
     success_title: "¡Gracias!", success_message: "Tu mensaje ha sido enviado exitosamente.",
     name_required: "El nombre es obligatorio", email_required: "El correo electrónico es obligatorio",
-    email_invalid: "Por favor ingresa un correo electrónico válido", suggestions_required: "Por favor comparte tus sugerencias con nosotros",
-    suggestions_too_long: "Las sugerencias deben tener 500 palabras o menos",
+    email_invalid: "Por favor ingresa un correo electrónico válido", suggestions_required: "Por favor comparte tus comentarios con nosotros",
+    suggestions_too_long: "Los comentarios deben tener 500 palabras o menos",
     // Additional Interface Elements
     task_input_placeholder: "Ingresa una tarea...", daily_month: "Diario por Mes",
     weekly_year: "Semanal por Año", time_format: "Formato de Hora",
@@ -131,19 +131,19 @@ const translations = {
     tasks_for: "Tareas para", tasks: "Tareas", tomorrow: "Mañana",
     // Additional form translations
     your_name: "Su Nombre", email_address: "Dirección de Correo", 
-    your_suggestions: "Sus Sugerencias", characters: "caracteres", 
-    submit_suggestion: "Enviar Sugerencia",
+    your_suggestions: "Sus Comentarios", characters: "caracteres", 
+    submit_suggestion: "Enviar Comentarios",
     // Modal and overlay elements
     quick_add_task: "Agregar Tarea Rápida", what_needs_done: "¿Qué necesita hacerse?",
     perfect: "¡Perfecto!", thank_you: "¡Gracias!", feedback_suggestions: "Comentarios y Sugerencias",
     share_feedback: "Comparte tus comentarios para ayudar a mejorar Task Tracker",
-    describe_suggestions: "Describe tus sugerencias, solicitudes de funciones o mejoras...",
+    describe_suggestions: "Describe tus comentarios, solicitudes de funciones o mejoras...",
     suggestions_title: "Comentarios y Sugerencias", suggestions_subtitle: "Comparte tus comentarios para ayudar a mejorar Task Tracker",
     weekends: "Fines de Semana", daily_slash_month: "Diario/Mes", weekly_slash_year: "Semanal/Año",
     work_week: "Semana Laboral", select_time: "Seleccionar hora", switch_format: "Cambiar entre formato AM/PM y 24 horas",
     // Additional missing translations
     quick_presets: "Preajustes Rápidos", active_tasks: "Tareas Activas",
-    suggestions_button: "Sugerencias", submit_suggestion_text: "Enviar Sugerencia",
+    suggestions_button: "Comentarios", submit_suggestion_text: "Enviar Comentarios",
     // Alarm functionality
     alarm_reminder: "Recordatorio de Alarma", alarm_on: "Alarma Activada", alarm_off: "Alarma Desactivada",
     alarm_description: "Suena 5 minutos antes y a la hora programada",
@@ -179,16 +179,16 @@ const translations = {
     // Priority Legend
     priority_legend: "Légende des priorités", high_priority: "Priorité élevée",
     medium_priority: "Priorité moyenne", low_priority: "Priorité faible",
-    // Floating Tabs and Suggestions System
-    suggestions: "Suggestions", suggestions_form_title: "Envoyez-nous vos Suggestions",
-    name_label: "Nom", email_label: "E-mail", suggestions_label: "Vos Suggestions",
+    // Floating Tabs and Feedback System
+    suggestions: "Commentaires", suggestions_form_title: "Envoyez-nous vos Commentaires",
+    name_label: "Nom", email_label: "E-mail", suggestions_label: "Vos Commentaires",
     name_placeholder: "Entrez votre nom", email_placeholder: "Entrez votre adresse e-mail",
-    suggestions_placeholder: "Partagez vos suggestions, commentaires ou idées avec nous (jusqu'à 500 mots)...",
-    submit_suggestions: "Envoyer Suggestions", character_count: "caractères restants",
+    suggestions_placeholder: "Partagez vos commentaires, suggestions ou idées avec nous (jusqu'à 500 mots)...",
+    submit_suggestions: "Envoyer Commentaires", character_count: "caractères restants",
     success_title: "Merci!", success_message: "Votre message a été envoyé avec succès.",
     name_required: "Le nom est requis", email_required: "L'e-mail est requis",
-    email_invalid: "Veuillez entrer une adresse e-mail valide", suggestions_required: "Veuillez partager vos suggestions avec nous",
-    suggestions_too_long: "Les suggestions doivent contenir 500 mots ou moins",
+    email_invalid: "Veuillez entrer une adresse e-mail valide", suggestions_required: "Veuillez partager vos commentaires avec nous",
+    suggestions_too_long: "Les commentaires doivent contenir 500 mots ou moins",
     // Additional Interface Elements
     task_input_placeholder: "Entrez une tâche...", daily_month: "Quotidien pour le Mois",
     weekly_year: "Hebdomadaire pour l'Année", time_format: "Format de l'Heure",
@@ -196,19 +196,19 @@ const translations = {
     tasks_for: "Tâches pour", tasks: "Tâches", tomorrow: "Demain",
     // Additional form translations
     your_name: "Votre Nom", email_address: "Adresse E-mail", 
-    your_suggestions: "Vos Suggestions", characters: "caractères", 
-    submit_suggestion: "Soumettre Suggestion",
+    your_suggestions: "Vos Commentaires", characters: "caractères", 
+    submit_suggestion: "Soumettre Commentaires",
     // Modal and overlay elements
     quick_add_task: "Ajouter Tâche Rapide", what_needs_done: "Qu'est-ce qui doit être fait?",
     perfect: "Parfait!", thank_you: "Merci!", feedback_suggestions: "Commentaires et Suggestions",
     share_feedback: "Partagez vos commentaires pour aider à améliorer Task Tracker",
-    describe_suggestions: "Décrivez vos suggestions, demandes de fonctionnalités ou améliorations...",
+    describe_suggestions: "Décrivez vos commentaires, demandes de fonctionnalités ou améliorations...",
     suggestions_title: "Commentaires et Suggestions", suggestions_subtitle: "Partagez vos commentaires pour aider à améliorer Task Tracker",
     weekends: "Week-ends", daily_slash_month: "Quotidien/Mois", weekly_slash_year: "Hebdomadaire/Année",
     work_week: "Semaine de Travail", select_time: "Sélectionner l'heure", switch_format: "Basculer entre le format AM/PM et 24 heures",
     // Additional missing translations
     quick_presets: "Préréglages Rapides", active_tasks: "Tâches Actives",
-    suggestions_button: "Suggestions", submit_suggestion_text: "Soumettre Suggestion",
+    suggestions_button: "Commentaires", submit_suggestion_text: "Soumettre Commentaires",
     // Alarm functionality
     alarm_reminder: "Rappel d'Alarme", alarm_on: "Alarme Activée", alarm_off: "Alarme Désactivée",
     alarm_description: "Sonne 5 minutes avant et à l'heure programmée",
@@ -245,16 +245,16 @@ const translations = {
     // Priority Legend
     priority_legend: "Prioritäts-Legende", high_priority: "Hohe Priorität",
     medium_priority: "Mittlere Priorität", low_priority: "Niedrige Priorität",
-    // Floating Tabs and Suggestions System
-    suggestions: "Vorschläge", suggestions_form_title: "Senden Sie uns Ihre Vorschläge",
-    name_label: "Name", email_label: "E-Mail", suggestions_label: "Ihre Vorschläge",
+    // Floating Tabs and Feedback System
+    suggestions: "Feedback", suggestions_form_title: "Senden Sie uns Ihr Feedback",
+    name_label: "Name", email_label: "E-Mail", suggestions_label: "Ihr Feedback",
     name_placeholder: "Geben Sie Ihren Namen ein", email_placeholder: "Geben Sie Ihre E-Mail-Adresse ein",
-    suggestions_placeholder: "Teilen Sie Ihre Vorschläge, Feedback oder Ideen mit uns (bis zu 500 Wörter)...",
-    submit_suggestions: "Vorschläge Senden", character_count: "Zeichen übrig",
+    suggestions_placeholder: "Teilen Sie Ihr Feedback, Vorschläge oder Ideen mit uns (bis zu 500 Wörter)...",
+    submit_suggestions: "Feedback Senden", character_count: "Zeichen übrig",
     success_title: "Vielen Dank!", success_message: "Ihre Nachricht wurde erfolgreich gesendet.",
     name_required: "Name ist erforderlich", email_required: "E-Mail ist erforderlich",
-    email_invalid: "Bitte geben Sie eine gültige E-Mail-Adresse ein", suggestions_required: "Bitte teilen Sie Ihre Vorschläge mit uns",
-    suggestions_too_long: "Vorschläge müssen 500 Wörter oder weniger enthalten",
+    email_invalid: "Bitte geben Sie eine gültige E-Mail-Adresse ein", suggestions_required: "Bitte teilen Sie Ihr Feedback mit uns",
+    suggestions_too_long: "Feedback muss 500 Wörter oder weniger enthalten",
     // Additional Interface Elements
     task_input_placeholder: "Geben Sie eine Aufgabe ein...", daily_month: "Täglich für den Monat",
     weekly_year: "Wöchentlich für das Jahr", time_format: "Zeitformat",
@@ -262,19 +262,19 @@ const translations = {
     tasks_for: "Aufgaben für", tasks: "Aufgaben", tomorrow: "Morgen",
     // Additional form translations
     your_name: "Ihr Name", email_address: "E-Mail-Adresse", 
-    your_suggestions: "Ihre Vorschläge", characters: "zeichen", 
-    submit_suggestion: "Vorschlag Senden",
+    your_suggestions: "Ihr Feedback", characters: "zeichen", 
+    submit_suggestion: "Feedback Senden",
     // Modal and overlay elements
     quick_add_task: "Schnelle Aufgabe hinzufügen", what_needs_done: "Was muss getan werden?",
     perfect: "Perfekt!", thank_you: "Vielen Dank!", feedback_suggestions: "Feedback und Vorschläge",
     share_feedback: "Teilen Sie Ihr Feedback mit, um Task Tracker zu verbessern",
-    describe_suggestions: "Beschreiben Sie Ihre Vorschläge, Feature-Anfragen oder Verbesserungen...",
+    describe_suggestions: "Beschreiben Sie Ihr Feedback, Feature-Anfragen oder Verbesserungen...",
     suggestions_title: "Feedback und Vorschläge", suggestions_subtitle: "Teilen Sie Ihr Feedback mit, um Task Tracker zu verbessern",
     weekends: "Wochenenden", daily_slash_month: "Täglich/Monat", weekly_slash_year: "Wöchentlich/Jahr",
     work_week: "Arbeitswoche", select_time: "Zeit auswählen", switch_format: "Zwischen AM/PM und 24-Stunden-Format wechseln",
     // Additional missing translations
     quick_presets: "Schnelleinstellungen", active_tasks: "Aktive Aufgaben",
-    suggestions_button: "Vorschläge", submit_suggestion_text: "Vorschlag Senden",
+    suggestions_button: "Feedback", submit_suggestion_text: "Feedback Senden",
     // Alarm functionality
     alarm_reminder: "Alarm Erinnerung", alarm_on: "Alarm Ein", alarm_off: "Alarm Aus",
     alarm_description: "Klingelt 5 Minuten vorher und zur geplanten Zeit",

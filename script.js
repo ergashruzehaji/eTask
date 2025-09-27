@@ -80,7 +80,12 @@ const translations = {
     suggestions_button: "Suggestions", submit_suggestion_text: "Submit Suggestion",
     // Alarm functionality
     alarm_reminder: "Alarm Reminder", alarm_on: "Alarm On", alarm_off: "Alarm Off",
-    alarm_description: "Rings 5 minutes before and at scheduled time"
+    alarm_description: "Rings 5 minutes before and at scheduled time",
+    // Context menu functionality
+    edit_task: "Edit Task", reschedule_task: "Reschedule", duplicate_task: "Duplicate",
+    mark_complete: "Mark Complete", mark_incomplete: "Mark Incomplete", delete_task: "Delete Task",
+    confirm_delete: "Confirm Delete", delete_task_message: "Are you sure you want to delete this task? This action cannot be undone.",
+    delete: "Delete", date: "Date", frequency: "Frequency", none: "None"
   },
   es: {
     view_day: "Día", view_week: "Semana", view_month: "Mes", add_task: "Agregar Tarea", cancel: "Cancelar",
@@ -141,7 +146,12 @@ const translations = {
     suggestions_button: "Sugerencias", submit_suggestion_text: "Enviar Sugerencia",
     // Alarm functionality
     alarm_reminder: "Recordatorio de Alarma", alarm_on: "Alarma Activada", alarm_off: "Alarma Desactivada",
-    alarm_description: "Suena 5 minutos antes y a la hora programada"
+    alarm_description: "Suena 5 minutos antes y a la hora programada",
+    // Context menu functionality
+    edit_task: "Editar Tarea", reschedule_task: "Reprogramar", duplicate_task: "Duplicar",
+    mark_complete: "Marcar Completada", mark_incomplete: "Marcar Incompleta", delete_task: "Eliminar Tarea",
+    confirm_delete: "Confirmar Eliminación", delete_task_message: "¿Estás seguro de que quieres eliminar esta tarea? Esta acción no se puede deshacer.",
+    delete: "Eliminar", date: "Fecha", frequency: "Frecuencia", none: "Ninguno"
   },
   fr: {
     view_day: "Jour", view_week: "Semaine", view_month: "Mois", add_task: "Ajouter Tâche", cancel: "Annuler",
@@ -201,7 +211,12 @@ const translations = {
     suggestions_button: "Suggestions", submit_suggestion_text: "Soumettre Suggestion",
     // Alarm functionality
     alarm_reminder: "Rappel d'Alarme", alarm_on: "Alarme Activée", alarm_off: "Alarme Désactivée",
-    alarm_description: "Sonne 5 minutes avant et à l'heure programmée"
+    alarm_description: "Sonne 5 minutes avant et à l'heure programmée",
+    // Context menu functionality
+    edit_task: "Modifier Tâche", reschedule_task: "Reprogrammer", duplicate_task: "Dupliquer",
+    mark_complete: "Marquer Terminée", mark_incomplete: "Marquer Incomplète", delete_task: "Supprimer Tâche",
+    confirm_delete: "Confirmer Suppression", delete_task_message: "Êtes-vous sûr de vouloir supprimer cette tâche? Cette action ne peut pas être annulée.",
+    delete: "Supprimer", date: "Date", frequency: "Fréquence", none: "Aucun"
   },
   de: {
     view_day: "Tag", view_week: "Woche", view_month: "Monat", add_task: "Aufgabe hinzufügen", cancel: "Abbrechen",
@@ -259,7 +274,15 @@ const translations = {
     work_week: "Arbeitswoche", select_time: "Zeit auswählen", switch_format: "Zwischen AM/PM und 24-Stunden-Format wechseln",
     // Additional missing translations
     quick_presets: "Schnelleinstellungen", active_tasks: "Aktive Aufgaben",
-    suggestions_button: "Vorschläge", submit_suggestion_text: "Vorschlag Senden"
+    suggestions_button: "Vorschläge", submit_suggestion_text: "Vorschlag Senden",
+    // Alarm functionality
+    alarm_reminder: "Alarm Erinnerung", alarm_on: "Alarm Ein", alarm_off: "Alarm Aus",
+    alarm_description: "Klingelt 5 Minuten vorher und zur geplanten Zeit",
+    // Context menu functionality
+    edit_task: "Aufgabe Bearbeiten", reschedule_task: "Neu Planen", duplicate_task: "Duplizieren",
+    mark_complete: "Als Erledigt Markieren", mark_incomplete: "Als Unvollständig Markieren", delete_task: "Aufgabe Löschen",
+    confirm_delete: "Löschen Bestätigen", delete_task_message: "Sind Sie sicher, dass Sie diese Aufgabe löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
+    delete: "Löschen", date: "Datum", frequency: "Häufigkeit", none: "Keine"
   },
   zh: {
     view_day: "日", view_week: "周", view_month: "月", add_task: "添加任务", cancel: "取消",
@@ -2678,6 +2701,10 @@ function initializeApp() {
         console.log('🎨 Priority select color functionality added');
     }
     
+        // Initialize task context menu system
+        initializeTaskContextMenu();
+        console.log('🖱️ Task context menu system initialized');
+        
         console.log('All components initialized successfully');
     } catch (error) {
         console.error('❌ Error initializing app:', error);
@@ -2691,6 +2718,395 @@ window.addEventListener('load', function() {
     // Reinitialize if something failed
     setTimeout(initializeApp, 100);
 });
+
+// Task Management Context Menu System
+let currentContextTaskIndex = null;
+let contextMenu = null;
+
+function initializeTaskContextMenu() {
+    contextMenu = document.getElementById('task-context-menu');
+    const deleteConfirmation = document.getElementById('delete-confirmation');
+    
+    // Context menu event handlers
+    document.getElementById('edit-task').addEventListener('click', () => editTask(currentContextTaskIndex));
+    document.getElementById('reschedule-task').addEventListener('click', () => rescheduleTask(currentContextTaskIndex));
+    document.getElementById('duplicate-task').addEventListener('click', () => duplicateTask(currentContextTaskIndex));
+    document.getElementById('mark-complete').addEventListener('click', () => markTaskComplete(currentContextTaskIndex));
+    document.getElementById('delete-task').addEventListener('click', () => showDeleteConfirmation(currentContextTaskIndex));
+    
+    // Delete confirmation handlers
+    document.getElementById('cancel-delete').addEventListener('click', hideDeleteConfirmation);
+    document.getElementById('confirm-delete').addEventListener('click', confirmDeleteTask);
+    
+    // Edit modal handlers
+    document.getElementById('close-edit-modal').addEventListener('click', hideEditModal);
+    document.getElementById('cancel-edit').addEventListener('click', hideEditModal);
+    document.getElementById('edit-task-form').addEventListener('submit', saveTaskEdit);
+    document.getElementById('edit-alarm-toggle').addEventListener('click', toggleEditAlarm);
+    
+    // Hide context menu on click outside
+    document.addEventListener('click', (e) => {
+        if (!contextMenu.contains(e.target)) {
+            hideContextMenu();
+        }
+    });
+    
+    // Prevent context menu from closing when clicking inside it
+    contextMenu.addEventListener('click', (e) => {
+        e.stopPropagation();
+    });
+}
+
+function showTaskContextMenu(event, taskIndex) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    currentContextTaskIndex = taskIndex;
+    const task = tasks[taskIndex];
+    
+    if (!task) return;
+    
+    // Update menu items based on task status
+    const markCompleteItem = document.getElementById('mark-complete');
+    if (task.completed) {
+        markCompleteItem.innerHTML = '↩️ Mark Incomplete';
+        markCompleteItem.setAttribute('data-translate', 'mark_incomplete');
+    } else {
+        markCompleteItem.innerHTML = '✅ Mark Complete';
+        markCompleteItem.setAttribute('data-translate', 'mark_complete');
+    }
+    
+    // Position context menu
+    const rect = event.currentTarget.getBoundingClientRect();
+    contextMenu.style.display = 'block';
+    contextMenu.style.left = `${event.pageX}px`;
+    contextMenu.style.top = `${event.pageY}px`;
+    
+    // Ensure menu stays within viewport
+    const menuRect = contextMenu.getBoundingClientRect();
+    if (menuRect.right > window.innerWidth) {
+        contextMenu.style.left = `${event.pageX - menuRect.width}px`;
+    }
+    if (menuRect.bottom > window.innerHeight) {
+        contextMenu.style.top = `${event.pageY - menuRect.height}px`;
+    }
+}
+
+function hideContextMenu() {
+    if (contextMenu) {
+        contextMenu.style.display = 'none';
+        currentContextTaskIndex = null;
+    }
+}
+
+function editTask(taskIndex) {
+    hideContextMenu();
+    const task = tasks[taskIndex];
+    if (!task) return;
+    
+    // Populate edit modal fields
+    document.getElementById('edit-task-title').value = task.text;
+    document.getElementById('edit-start-time').value = task.time;
+    document.getElementById('edit-end-time').value = task.endTime || '';
+    document.getElementById('edit-task-date').value = task.date;
+    document.getElementById('edit-task-priority').value = task.priority;
+    
+    // Set alarm state
+    const alarmToggle = document.getElementById('edit-alarm-toggle');
+    const alarmText = alarmToggle.querySelector('.alarm-text');
+    const alarmInfo = alarmToggle.parentElement.querySelector('.alarm-info');
+    
+    if (task.alarmEnabled) {
+        alarmToggle.setAttribute('data-enabled', 'true');
+        alarmText.textContent = 'Alarm On';
+        alarmInfo.style.display = 'block';
+    } else {
+        alarmToggle.setAttribute('data-enabled', 'false');
+        alarmText.textContent = 'Alarm Off';
+        alarmInfo.style.display = 'none';
+    }
+    
+    // Store the editing task index
+    window.editingTaskIndex = taskIndex;
+    
+    // Show edit modal
+    document.getElementById('task-edit-modal').style.display = 'flex';
+    
+    showNotification('📝 Editing task - make changes and save');
+}
+
+function rescheduleTask(taskIndex) {
+    hideContextMenu();
+    const task = tasks[taskIndex];
+    if (!task) return;
+    
+    // Enable drag-drop mode
+    showNotification('📅 Click on a new date/time to reschedule this task');
+    
+    // Highlight the task for rescheduling
+    const taskElements = document.querySelectorAll(`[data-task-index="${taskIndex}"]`);
+    taskElements.forEach(el => {
+        el.classList.add('rescheduling');
+        el.style.border = '2px dashed #ff9800';
+        el.style.background = 'rgba(255, 152, 0, 0.1)';
+    });
+    
+    // Store rescheduling task
+    window.reschedulingTaskIndex = taskIndex;
+    
+    // Add click handlers to calendar days and time slots
+    addRescheduleHandlers();
+}
+
+function addRescheduleHandlers() {
+    // Add handlers to calendar days
+    document.querySelectorAll('.calendar-day').forEach(day => {
+        day.style.cursor = 'pointer';
+        day.addEventListener('click', handleRescheduleClick);
+    });
+    
+    // Add handlers to time blocks in timeslot view
+    document.querySelectorAll('.time-block').forEach(block => {
+        block.style.cursor = 'pointer';
+        block.addEventListener('click', handleRescheduleClick);
+    });
+    
+    // Add escape to cancel
+    document.addEventListener('keydown', cancelReschedule);
+}
+
+function handleRescheduleClick(event) {
+    event.stopPropagation();
+    
+    if (window.reschedulingTaskIndex === null) return;
+    
+    const task = tasks[window.reschedulingTaskIndex];
+    if (!task) return;
+    
+    let newDate, newTime;
+    
+    if (event.currentTarget.classList.contains('calendar-day')) {
+        // Calendar day clicked
+        const day = parseInt(event.currentTarget.textContent);
+        if (isNaN(day)) return;
+        
+        const newDateObj = new Date(currentYear, currentMonth, day);
+        newDate = newDateObj.toISOString().split('T')[0];
+        newTime = task.time; // Keep original time
+    } else if (event.currentTarget.classList.contains('time-block')) {
+        // Time block clicked
+        const dayIndex = parseInt(event.currentTarget.dataset.dayIndex);
+        const timeSlot = event.currentTarget.dataset.time;
+        
+        if (isNaN(dayIndex) || !timeSlot) return;
+        
+        const weekStart = getWeekStart(new Date(currentYear, currentMonth, 1));
+        const newDateObj = new Date(weekStart);
+        newDateObj.setDate(weekStart.getDate() + dayIndex);
+        
+        newDate = newDateObj.toISOString().split('T')[0];
+        newTime = timeSlot;
+    }
+    
+    if (newDate && newTime) {
+        // Update task
+        task.date = newDate;
+        task.time = newTime;
+        
+        // Save and refresh
+        saveTasks();
+        updateCalendar();
+        displayTasks();
+        
+        // Clear rescheduling state
+        clearRescheduleMode();
+        
+        showNotification(`✅ Task rescheduled to ${formatDate(new Date(newDate))} at ${newTime}`);
+    }
+}
+
+function cancelReschedule(event) {
+    if (event.key === 'Escape' && window.reschedulingTaskIndex !== null) {
+        clearRescheduleMode();
+        showNotification('❌ Rescheduling cancelled');
+    }
+}
+
+function clearRescheduleMode() {
+    // Remove rescheduling indicators
+    document.querySelectorAll('.rescheduling').forEach(el => {
+        el.classList.remove('rescheduling');
+        el.style.border = '';
+        el.style.background = '';
+    });
+    
+    // Remove handlers
+    document.querySelectorAll('.calendar-day, .time-block').forEach(el => {
+        el.style.cursor = '';
+        el.removeEventListener('click', handleRescheduleClick);
+    });
+    
+    // Remove escape handler
+    document.removeEventListener('keydown', cancelReschedule);
+    
+    // Clear state
+    window.reschedulingTaskIndex = null;
+}
+
+function duplicateTask(taskIndex) {
+    hideContextMenu();
+    const task = tasks[taskIndex];
+    if (!task) return;
+    
+    // Create duplicate with modified title
+    const duplicateTask = {
+        ...task,
+        text: `${task.text} (Copy)`,
+        id: Date.now() + Math.random() // Ensure unique ID
+    };
+    
+    tasks.push(duplicateTask);
+    saveTasks();
+    updateCalendar();
+    displayTasks();
+    
+    showNotification('📋 Task duplicated successfully');
+}
+
+function markTaskComplete(taskIndex) {
+    hideContextMenu();
+    const task = tasks[taskIndex];
+    if (!task) return;
+    
+    // Toggle completion status
+    task.completed = !task.completed;
+    task.completedAt = task.completed ? new Date().toISOString() : null;
+    
+    saveTasks();
+    updateCalendar();
+    displayTasks();
+    
+    const status = task.completed ? 'completed' : 'marked as incomplete';
+    showNotification(`✅ Task ${status}`);
+}
+
+function showDeleteConfirmation(taskIndex) {
+    hideContextMenu();
+    const task = tasks[taskIndex];
+    if (!task) return;
+    
+    // Update preview
+    document.querySelector('.preview-title').textContent = task.text;
+    document.querySelector('.preview-time').textContent = `${formatDate(new Date(task.date))} at ${task.time}`;
+    
+    // Show modal
+    document.getElementById('delete-confirmation').style.display = 'flex';
+    
+    // Store task index for confirmation
+    window.pendingDeleteIndex = taskIndex;
+}
+
+function hideDeleteConfirmation() {
+    document.getElementById('delete-confirmation').style.display = 'none';
+    window.pendingDeleteIndex = null;
+}
+
+function confirmDeleteTask() {
+    if (window.pendingDeleteIndex === null) return;
+    
+    const task = tasks[window.pendingDeleteIndex];
+    const taskName = task ? task.text : 'Unknown task';
+    
+    // Remove task
+    tasks.splice(window.pendingDeleteIndex, 1);
+    saveTasks();
+    updateCalendar();
+    displayTasks();
+    
+    hideDeleteConfirmation();
+    showNotification(`🗑️ "${taskName}" deleted successfully`);
+}
+
+function hideEditModal() {
+    document.getElementById('task-edit-modal').style.display = 'none';
+    window.editingTaskIndex = null;
+}
+
+function toggleEditAlarm() {
+    const alarmToggle = document.getElementById('edit-alarm-toggle');
+    const alarmText = alarmToggle.querySelector('.alarm-text');
+    const alarmInfo = alarmToggle.parentElement.querySelector('.alarm-info');
+    const currentState = alarmToggle.getAttribute('data-enabled') === 'true';
+    
+    if (currentState) {
+        alarmToggle.setAttribute('data-enabled', 'false');
+        alarmText.textContent = 'Alarm Off';
+        alarmInfo.style.display = 'none';
+    } else {
+        alarmToggle.setAttribute('data-enabled', 'true');
+        alarmText.textContent = 'Alarm On';
+        alarmInfo.style.display = 'block';
+    }
+}
+
+function saveTaskEdit(event) {
+    event.preventDefault();
+    
+    if (window.editingTaskIndex === null) return;
+    
+    const task = tasks[window.editingTaskIndex];
+    if (!task) return;
+    
+    // Get form values
+    const title = document.getElementById('edit-task-title').value.trim();
+    const startTime = document.getElementById('edit-start-time').value;
+    const endTime = document.getElementById('edit-end-time').value;
+    const date = document.getElementById('edit-task-date').value;
+    const priority = document.getElementById('edit-task-priority').value;
+    const alarmEnabled = document.getElementById('edit-alarm-toggle').getAttribute('data-enabled') === 'true';
+    
+    if (!title || !startTime || !date) {
+        showNotification('❌ Please fill in all required fields');
+        return;
+    }
+    
+    // Update task
+    task.text = title;
+    task.time = startTime;
+    task.endTime = endTime;
+    task.date = date;
+    task.priority = priority;
+    task.alarmEnabled = alarmEnabled;
+    
+    if (alarmEnabled) {
+        task.alarmTime = startTime;
+    }
+    
+    // Save and refresh
+    saveTasks();
+    updateCalendar();
+    displayTasks();
+    
+    hideEditModal();
+    showNotification(`✅ Task "${title}" updated successfully`);
+}
+
+// Add context menu to task list items
+function addContextMenuToTasks() {
+    // Add to regular task list
+    document.querySelectorAll('.task-item').forEach((item, index) => {
+        item.addEventListener('contextmenu', (e) => showTaskContextMenu(e, index));
+        item.dataset.taskIndex = index;
+    });
+    
+    // Add to timeslot task blocks
+    document.querySelectorAll('.task-block').forEach((block) => {
+        const taskIndex = parseInt(block.dataset.taskIndex);
+        if (!isNaN(taskIndex)) {
+            block.addEventListener('contextmenu', (e) => showTaskContextMenu(e, taskIndex));
+        }
+    });
+}
 
 // Setup form handlers
 function setupFormHandlers() {
@@ -2974,6 +3390,10 @@ function displayTask(task) {
   li.classList.add('task-item'); // Add task-item class for styling and selection
   li.dataset.taskId = task.id; // Add task ID for bulk operations
   
+  // Find task index for context menu
+  const taskIndex = tasks.findIndex(t => t.id === task.id);
+  li.dataset.taskIndex = taskIndex;
+  
   if (task.alarmEnabled) {
     li.classList.add('has-alarm');
   }
@@ -3014,7 +3434,19 @@ function displayTask(task) {
       </div>
     </div>
     <div class="task-actions">
-      <button class="delete-btn" onclick="deleteTask('${task.day || new Date().toISOString().split('T')[0]}', ${task.id})">Delete</button>
+      <button class="inline-btn edit-btn" onclick="editTask(${taskIndex})" title="Edit task">
+        ✏️
+      </button>
+      <button class="inline-btn complete-btn" onclick="markTaskComplete(${taskIndex})" title="${task.completed ? 'Mark incomplete' : 'Mark complete'}">
+        ${task.completed ? '↩️' : '✅'}
+      </button>
+      <button class="inline-btn reschedule-btn" onclick="rescheduleTask(${taskIndex})" title="Reschedule task">
+        📅
+      </button>
+      <button class="inline-btn delete-btn" onclick="showDeleteConfirmation(${taskIndex})" title="Delete task">
+        🗑️
+      </button>
+      <span class="context-menu-hint" style="font-size: 10px; color: #999; margin-left: 8px;">Right-click for more</span>
     </div>
   `;
   
@@ -4304,6 +4736,11 @@ function displayTasks() {
   filteredTasks.forEach(task => {
     displayTask(task);
   });
+  
+  // Add context menu support to newly rendered tasks
+  setTimeout(() => {
+    addContextMenuToTasks();
+  }, 50);
   
   // Update calendar after task changes
   renderCalendar();

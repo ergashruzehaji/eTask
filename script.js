@@ -1144,12 +1144,8 @@ function clearSidebarForm() {
 }
 
 function showTaskSidebar(dateString) {
-    console.log('🔧 showTaskSidebar called with:', dateString);
     const sidebar = document.getElementById('task-sidebar');
     const sidebarSelectedDate = document.getElementById('sidebar-selected-date');
-    
-    console.log('🔧 Sidebar element:', sidebar);
-    console.log('🔧 Current sidebar classes:', sidebar ? sidebar.className : 'NO SIDEBAR');
     
     if (!sidebar) {
         console.error('🚨 Sidebar element not found!');
@@ -1166,7 +1162,6 @@ function showTaskSidebar(dateString) {
         sidebarSelectedDate.textContent = formatTranslatedDate(date, 'full');
     }
     
-    console.log('🔧 Adding show class to sidebar');
     sidebar.classList.add('show');
     document.body.classList.add('sidebar-open');
     
@@ -1177,19 +1172,14 @@ function showTaskSidebar(dateString) {
     }
     sidebarOpen = true;
     
-    console.log('🔧 Sidebar classes after show:', sidebar.className);
-    console.log('🔧 Body classes:', document.body.className);
-    
     // Focus on task input
     setTimeout(() => {
         const taskInput = document.getElementById('sidebar-task-title');
-        console.log('🔧 Task input found:', !!taskInput);
         if (taskInput) taskInput.focus();
     }, 300);
 }
 
 function closeSidebar() {
-    console.log('🔧 Closing sidebar');
     const sidebar = document.getElementById('task-sidebar');
     if (!sidebar) {
         console.error('🚨 Sidebar not found when trying to close');
@@ -1200,8 +1190,6 @@ function closeSidebar() {
     document.body.classList.remove('sidebar-open');
     sidebarOpen = false;
     selectedSidebarDate = null;
-    
-    console.log('🔧 Sidebar closed, classes:', sidebar.className);
     
     // Reset form
     const sidebarForm = document.getElementById('sidebar-task-form');
@@ -1272,60 +1260,6 @@ function toggleSidebarAlarm() {
     }
     
     console.log(`🔔 Alarm toggled: ${newState ? 'ON' : 'OFF'}`);
-}
-
-function applySidebarRecurringPreset(preset) {
-    const recurringType = document.getElementById('sidebar-recurring-type');
-    const recurringCount = document.getElementById('sidebar-recurring-count');
-    const weeklyOptions = document.getElementById('sidebar-weekly-options');
-    const weekdayCheckboxes = weeklyOptions?.querySelectorAll('input[type="checkbox"]');
-    
-    // Clear all checkboxes first
-    if (weekdayCheckboxes) {
-        weekdayCheckboxes.forEach(cb => cb.checked = false);
-    }
-    
-    switch (preset) {
-        case 'work-week':
-            recurringType.value = 'weekly';
-            recurringCount.value = '52';
-            weeklyOptions.style.display = 'block';
-            [1, 2, 3, 4, 5].forEach(day => {
-                const checkbox = weeklyOptions?.querySelector(`input[value="${day}"]`);
-                if (checkbox) checkbox.checked = true;
-            });
-            break;
-            
-        case 'weekends':
-            recurringType.value = 'weekly';
-            recurringCount.value = '26';
-            weeklyOptions.style.display = 'block';
-            [6, 0].forEach(day => {
-                const checkbox = weeklyOptions?.querySelector(`input[value="${day}"]`);
-                if (checkbox) checkbox.checked = true;
-            });
-            break;
-            
-        case 'daily-month':
-            recurringType.value = 'daily';
-            recurringCount.value = '30';
-            weeklyOptions.style.display = 'none';
-            break;
-            
-        case 'weekly-year':
-            recurringType.value = 'weekly';
-            recurringCount.value = '52';
-            weeklyOptions.style.display = 'block';
-            const today = new Date().getDay();
-            const todayCheckbox = weeklyOptions?.querySelector(`input[value="${today}"]`);
-            if (todayCheckbox) todayCheckbox.checked = true;
-            break;
-    }
-    
-    // Update preview and submit button after applying preset
-    setTimeout(() => {
-        updateRecurringPreview();
-    }, 100);
 }
 
 function handleSidebarFormSubmit(e) {
@@ -3032,21 +2966,6 @@ async function loadTasks() {
   setupAllAlarms();
   
   // Sidebar removed
-}
-
-// Display tasks
-function displayTasks() {
-  if (!list) return;
-  list.innerHTML = '';
-  
-  let filteredTasks = tasks;
-  if (currentFilter) {
-    filteredTasks = tasks.filter(task => task.day === currentFilter);
-  }
-  
-  filteredTasks.forEach(task => {
-    displayTask(task);
-  });
 }
 
 // Display individual task
